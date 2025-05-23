@@ -1,0 +1,73 @@
+[
+   {
+      "operation": "register",
+      "values":
+      {
+         "username": "ernesto",
+         "password": "password"
+      }
+   },
+   {
+      "operation": "login",
+      "values":
+      {
+         "username": "ernesto",
+         "password": "password"
+      }
+   },
+   {
+      "operation": "updateCredentials",
+      "values":
+      {
+         "username": "ernesto",
+         "old_password": "password",
+         "new_password": "password1"
+      }
+   },
+   {
+      "operation": "logout",
+      "values":
+      {
+      }
+   },
+   {
+      "operation": "insertLimitOrder",
+      "values":
+      {
+         "type": "bid",
+         "size": 1230,
+         "price": 20000
+      }
+   },
+   {
+      "operation": "insertMarketOrder",
+      "values":
+      {
+         "type": "ask",
+         "size": 1250
+      }
+   },
+   {
+      "operation": "insertStopOrder",
+      "values":
+      {
+         "type": "ask",
+         "size": 2004,
+         "price": 12500
+      }
+   },
+   {
+      "operation": "cancelOrder",
+      "values":
+      {
+         "orderId": 123
+      }
+   },
+   {
+      "operation": "getPriceHistory",
+      "values":
+      {
+         "month": "122024"
+      }
+   }
+]

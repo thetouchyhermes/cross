@@ -1,0 +1,8 @@
+{
+   "java.configuration.updateBuildConfiguration": "automatic",
+   "editor.tabSize": 3,
+   "editor.insertSpaces": true,
+   "code-runner.executorMap": {
+      "java": "cd $dir && javac $fileName && java $fileNameWithoutExt"
+   }
+}

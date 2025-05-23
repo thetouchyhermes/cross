@@ -1,0 +1,102 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "Execute server with mvn",
+         "type": "shell",
+         "command": "mvn clean install exec:java -Pserver",
+         "group": {
+            "kind": "test",
+            "isDefault": false
+         },
+         "problemMatcher": [
+            "$mvn"
+         ]
+      },
+      {
+         "label": "Execute client with mvn*",
+         "type": "shell",
+         "command": "mvn exec:java -Pclient",
+         "group": {
+            "kind": "test",
+            "isDefault": false
+         },
+         "problemMatcher": [
+            "$mvn"
+         ]
+      },
+      {
+         "label": "Compile with javac",
+         "type": "shell",
+         "command": "mvn clean install dependency:copy-dependencies; javac -d target/classes -cp 'target/classes;target/dependency/*' src/main/java/cross/*.java",
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "problemMatcher": [
+            "$mvn",
+            "$javac"
+         ]
+      },
+      {
+         "label": "Execute server with java",
+         "type": "shell",
+         "command": "java -cp 'target/classes;target/dependency/*' cross.ServerMain",
+         "group": {
+            "kind": "test",
+            "isDefault": true
+         },
+         "problemMatcher": [
+            "$java"
+         ]
+      },
+      {
+         "label": "Execute client with java*",
+         "type": "shell",
+         "command": "java -cp 'target/classes;target/dependency/*' cross.ClientMain",
+         "group": {
+            "kind": "test",
+            "isDefault": true
+         },
+         "problemMatcher": [
+            "$java"
+         ]
+      },
+      /*{
+         "label": "Build JAR files with mvn",
+         "type": "shell",
+         "command": "mvn clean install; mvn dependency:copy-dependencies; mvn package -Pserver; mvn package -Pclient",
+         "group": {
+            "kind": "none",
+            "isDefault": true
+         },
+         "problemMatcher": [
+            "$mvn"
+         ]
+      },*/
+      /*{
+         "label": "Execute server JAR",
+         "type": "shell",
+         "command": "java -jar ./target/cross-server.jar",
+         "group": {
+            "kind": "none",
+            "isDefault": false
+         },
+         "problemMatcher": [
+            "$java"
+         ]
+      },*/
+      /*{
+         "label": "Execute client JAR*",
+         "type": "shell",
+         "command": "java -jar ./target/cross-client.jar",
+         "group": {
+            "kind": "none",
+            "isDefault": false
+         },
+         "problemMatcher": [
+            "$java"
+         ]
+      }*/
+   ]
+}
