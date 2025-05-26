@@ -30,7 +30,9 @@ public class MatchingAlgorithm {
 
       Iterator<LimitOrder> iter = book.iterator();
       while(size > 0 && iter.hasNext()) {
-         LimitOrder firstLimit = iter.next();
+         LimitOrder bookOrder = iter.next();
+
+         OrderBookEntry entry = orderBook.getEntry()
       }
    }
 
