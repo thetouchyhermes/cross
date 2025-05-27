@@ -14,14 +14,15 @@ import it.unipi.cross.data.Order;
 public class OrderBook {
 
    private final BlockingQueue<Order> newOrders = new LinkedBlockingQueue<>();
-   private final Map<Integer, Order> pendingOrders = new ConcurrentHashMap<>();
+   private final Map<Integer, Order> currentOrders = new ConcurrentHashMap<>();
 
    private final NavigableSet<LimitOrder> bidBook = new TreeSet<>(
          Comparator.comparingInt(LimitOrder::getPrice).reversed().thenComparingLong(LimitOrder::getTimestamp));
    private final NavigableSet<LimitOrder> askBook = new TreeSet<>(
          Comparator.comparingInt(LimitOrder::getPrice).thenComparingLong(LimitOrder::getTimestamp));
-   public OrderBook() {
 
+   public OrderBook() {
+      
    }
 
    public int insertOrder(Order order) {
@@ -32,7 +33,6 @@ public class OrderBook {
 
    }
 
-   public OrderBookEntry 
    public NavigableSet<LimitOrder> getBidBook() {
       return bidBook;
    }

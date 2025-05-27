@@ -24,16 +24,34 @@ public class MatchingAlgorithm {
 
    private void matchMarketOrder(OrderBook orderBook, MarketOrder order) {
       Type type = order.getType();
-      int size = order.getSize();
+      int marketSize = order.getSize();
 
       NavigableSet<LimitOrder> book = (type == Type.bid) ? orderBook.getBidBook() : orderBook.getAskBook();
 
       Iterator<LimitOrder> iter = book.iterator();
-      while(size > 0 && iter.hasNext()) {
+      while(marketSize > 0 && iter.hasNext()) {
          LimitOrder bookOrder = iter.next();
 
-         OrderBookEntry entry = orderBook.getEntry()
+         int limitSize = bookOrder.getSize();
+         int tradedSize = Math.min(marketSize, limitSize);
+
+         bookOrder.setSize(limitSize - tradedSize);
+         marketSize -= tradedSize;
+
+         if (bookOrder.getSize() == 0) {
+            orderBook.complete(bookOrder);
+         }
+         if (marketSize == 0) {
+            order.setSize(marketSize);
+            orderBook.complete(order);
+            return;
+         }
       }
+
+      if (marketSize > 0) {
+         orderBook.incomplete(order);
+      }
+
    }
 
    private void matchLimitOrder(OrderBook orderBook, LimitOrder order) {
