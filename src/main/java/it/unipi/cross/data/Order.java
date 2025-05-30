@@ -13,14 +13,14 @@ import com.google.gson.GsonBuilder;
  */
 public abstract class Order {
 
-   protected final int orderId;
+   protected int orderId = -1;
    protected final String username;
    protected final Type type;
    protected final OrderType orderType;
    protected final int size;  // millesimi di BTC
-   protected transient Integer tempSize;
    protected final int price; // millesimi di USD
    protected final long timestamp;
+   protected transient Integer tempSize;
 
    public Order(int orderId, String username, Type type, OrderType orderType, int size, int price, long timestamp) {
       this.orderId = orderId;
@@ -32,8 +32,21 @@ public abstract class Order {
       this.timestamp = timestamp;
    }
 
+   public Order(String username, Type type, OrderType orderType, int size, int price, long timestamp) {
+      this.username = username;
+      this.type = type;
+      this.orderType = orderType;
+      this.size = this.tempSize = size;
+      this.price = price;
+      this.timestamp = timestamp;
+   }
+
    public int getOrderId() {
       return orderId;
+   }
+
+   public void setOrderId(int orderId) {
+      this.orderId = orderId;
    }
 
    public String getUsername() {

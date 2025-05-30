@@ -18,4 +18,9 @@ public class MarketOrder extends Order {
       // Market orders do not have a price
       super(orderId, username, type, OrderType.market, size, 0, timestamp);
    }
+
+   public MarketOrder(String username, Type type, int size, long timestamp) {
+      // Market orders do not have a price
+      super(username, type, OrderType.market, size, 0, timestamp);
+   }
 }

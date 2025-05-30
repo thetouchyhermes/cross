@@ -18,4 +18,8 @@ public class LimitOrder extends Order {
    public LimitOrder(int orderId, String username, Type type, int size, int price, long timestamp) {
       super(orderId, username, type, OrderType.limit, size, price, timestamp);
    }
+
+   public LimitOrder(String username, Type type, int size, int price, long timestamp) {
+      super(username, type, OrderType.limit, size, price, timestamp);
+   }
 }

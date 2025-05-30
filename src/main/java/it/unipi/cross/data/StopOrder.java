@@ -18,4 +18,22 @@ public class StopOrder extends Order {
    public StopOrder(int orderId, String username, Type type, int size, int price, long timestamp) {
       super(orderId, username, type, OrderType.stop, size, price, timestamp);
    }
+   
+   public StopOrder(String username, Type type, int size, int price, long timestamp) {
+      super(username, type, OrderType.stop, size, price, timestamp);
+   }
+
+   public static MarketOrder convertToMarket(StopOrder stopOrder) {
+      MarketOrder marketOrder = new MarketOrder(
+         stopOrder.getOrderId(),
+         stopOrder.getUsername(),
+         stopOrder.getType(),
+         stopOrder.getOriginalSize(),
+         stopOrder.getTimestamp()
+      );
+      // update tempSize
+      marketOrder.setSize(stopOrder.getSize());
+
+      return marketOrder;
+   }
 }
