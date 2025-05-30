@@ -15,7 +15,7 @@ package it.unipi.cross.data;
  */
 public class StopOrder extends Order {
    
-   public StopOrder(int orderId, Type type, int size, int price, long timestamp) {
-      super(orderId, type, OrderType.stop, size, price, timestamp);
+   public StopOrder(int orderId, String username, Type type, int size, int price, long timestamp) {
+      super(orderId, username, type, OrderType.stop, size, price, timestamp);
    }
 }

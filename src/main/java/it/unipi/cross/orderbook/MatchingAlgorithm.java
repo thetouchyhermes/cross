@@ -22,9 +22,9 @@ public class MatchingAlgorithm {
       }
    }
 
-   private void matchMarketOrder(OrderBook orderBook, MarketOrder order) {
-      Type type = order.getType();
-      int marketSize = order.getSize();
+   private void matchMarketOrder(OrderBook orderBook, MarketOrder marketOrder) {
+      Type type = marketOrder.getType();
+      int marketSize = marketOrder.getSize();
 
       NavigableSet<LimitOrder> book = (type == Type.bid) ? orderBook.getBidBook() : orderBook.getAskBook();
 
@@ -42,23 +42,48 @@ public class MatchingAlgorithm {
             orderBook.complete(bookOrder);
          }
          if (marketSize == 0) {
-            order.setSize(marketSize);
-            orderBook.complete(order);
+            marketOrder.setSize(marketSize);
+            orderBook.complete(marketOrder);
             return;
          }
       }
 
       if (marketSize > 0) {
-         orderBook.incomplete(order);
+         orderBook.incomplete(marketOrder);
       }
 
    }
 
-   private void matchLimitOrder(OrderBook orderBook, LimitOrder order) {
+   private void matchLimitOrder(OrderBook orderBook, LimitOrder limitOrder) {
 
    }
 
-   private void matchStopOrder(OrderBook orderBook, StopOrder order) {
+   private void matchStopOrder(OrderBook orderBook, StopOrder stopOrder) {
+      // check if it exists
+      //if (???) {...}
 
+      Type type = stopOrder.getType();
+      int stopPrice = stopOrder.getPrice();
+
+      boolean execute = false;
+      int bestBookPrice = -1;
+      if (type == Type.bid) {
+         //prezzo massimo, compratore
+         bestBookPrice = orderBook.getBestAskPrice();
+         if (bestBookPrice != -1 && bestBookPrice >= stopPrice)
+            execute = true;
+      } else if (type == Type.ask) {
+         //prezzo minimo, venditore
+         bestBookPrice = orderBook.getBestBidPrice();
+         if (bestBookPrice != -1 && bestBookPrice <= stopPrice)
+            execute = true;
+      }
+
+      if (execute) {
+         //convert to market order
+         Order order = (Order) stopOrder;
+         MarketOrder marketOrder = (MarketOrder) order;
+         
+      }
    }
 }

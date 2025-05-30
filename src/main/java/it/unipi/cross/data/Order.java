@@ -6,7 +6,7 @@ import com.google.gson.GsonBuilder;
 /**
  * Represents an abstract order in a trading system.
  * <p>
- * This class encapsulates the common properties of an order, such as its ID, type,
+ * This class encapsulates the common properties of an order, such as its ID, username, type,
  * order type, size, price, and timestamp. It is intended to be extended by specific
  * order implementations.
  * </p>
@@ -14,6 +14,7 @@ import com.google.gson.GsonBuilder;
 public abstract class Order {
 
    protected final int orderId;
+   protected final String username;
    protected final Type type;
    protected final OrderType orderType;
    protected final int size;  // millesimi di BTC
@@ -21,8 +22,9 @@ public abstract class Order {
    protected final int price; // millesimi di USD
    protected final long timestamp;
 
-   public Order(int orderId, Type type, OrderType orderType, int size, int price, long timestamp) {
+   public Order(int orderId, String username, Type type, OrderType orderType, int size, int price, long timestamp) {
       this.orderId = orderId;
+      this.username = username;
       this.type = type;
       this.orderType = orderType;
       this.size = this.tempSize = size;
@@ -32,6 +34,10 @@ public abstract class Order {
 
    public int getOrderId() {
       return orderId;
+   }
+
+   public String getUsername() {
+      return username;
    }
 
    public Type getType() {

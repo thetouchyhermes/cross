@@ -14,8 +14,8 @@ package it.unipi.cross.data;
  */
 public class MarketOrder extends Order {
 
-   public MarketOrder(int orderId, Type type, int size, long timestamp) {
+   public MarketOrder(int orderId, String username, Type type, int size, long timestamp) {
       // Market orders do not have a price
-      super(orderId, type, OrderType.market, size, 0, timestamp);
+      super(orderId, username, type, OrderType.market, size, 0, timestamp);
    }
 }
