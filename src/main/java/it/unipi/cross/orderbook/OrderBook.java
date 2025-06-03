@@ -51,13 +51,11 @@ public class OrderBook {
          idGenerator.set(lastId + 1);
 
          for (Order order : orderMap.values()) {
-            if (order.getOrderType() == OrderType.limit) {
-               switch(order.getType()) {
-                  case ask:
-                     askBook.add((LimitOrder) order);
-                  case bid:
-                     bidBook.add((LimitOrder) order);
-               }
+            switch(order.getType()) {
+               case ask:
+                  askBook.add((LimitOrder) order);
+               case bid:
+                  bidBook.add((LimitOrder) order);
             }
          }
       }
