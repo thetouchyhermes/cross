@@ -13,6 +13,7 @@ Versione 1.3
 
 - Istruzione su come compilare ed eseguire (argomenti, librerie, sintassi dei comandi delle operazioni) -> Manuale di istruzioni
 
+- all stop orders are implemented as day orders: they expire at the end of the current session (namely at server closure)
 
 Da consegnare:
 1. Codice sorgente commentato di tutte le classi e test, deve funzionare con javac

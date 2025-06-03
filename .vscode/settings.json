@@ -4,5 +4,6 @@
    "editor.insertSpaces": true,
    "code-runner.executorMap": {
       "java": "cd $dir && javac $fileName && java $fileNameWithoutExt"
-   }
+   },
+   "java.debug.settings.onBuildFailureProceed": true
 }

@@ -5,7 +5,7 @@ import java.io.IOException;
 /**
  * Exception thrown to indicate an error occurred while reading or processing configuration.
  * <p>
- * This exception extends {@link IOException} and is typically used to wrap configuration-related errors,
+ * This exception extends {@link IOException} and is used to wrap configuration-related errors,
  * providing a consistent prefix in the exception message for easier identification.
  * </p>
  */

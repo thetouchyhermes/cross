@@ -1,109 +1,104 @@
 package it.unipi.cross.data;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-// File: src/test/java/it/unipi/cross/data/DataPackageTest.java
 class DataPackageTest {
 
-   // ----- LimitOrder -----
-   @Test
-   void testLimitOrderConstructorAndGetters() {
-      LimitOrder order = new LimitOrder(Type.bid, 1000, 50000, 123456789L);
-      assertEquals(Type.bid, order.getType());
-      assertEquals(OrderType.limit, order.getOrderType());
-      assertEquals(1000, order.getSize());
-      assertEquals(50000, order.getPrice());
-      assertEquals(123456789L, order.getTimestamp());
+   // Minimal concrete subclass for testing
+   static class TestOrder extends Order {
+      public TestOrder(int orderId, String username, Type type, OrderType orderType, int size, int price, long timestamp) {
+         super(orderId, username, type, orderType, size, price, timestamp);
+      }
+      public TestOrder(String username, Type type, OrderType orderType, int size, int price, long timestamp) {
+         super(username, type, orderType, size, price, timestamp);
+      }
+   }
+
+   private TestOrder order;
+   private final int orderId = 42;
+   private final String username = "alice";
+   private final Type type = Type.bid;
+   private final OrderType orderType = OrderType.limit;
+   private final int size = 1000;
+   private final int price = 50000;
+   private final long timestamp = 123456789L;
+
+   @BeforeEach
+   void setUp() {
+      order = new TestOrder(orderId, username, type, orderType, size, price, timestamp);
    }
 
    @Test
-   void testLimitOrderToStringIsJson() {
-      LimitOrder order = new LimitOrder(Type.ask, 2000, 60000, 987654321L);
+   void testConstructorWithOrderId() {
+      assertEquals(orderId, order.getOrderId());
+      assertEquals(username, order.getUsername());
+      assertEquals(type, order.getType());
+      assertEquals(orderType, order.getOrderType());
+      assertEquals(size, order.getSize());
+      assertEquals(size, order.getOriginalSize());
+      assertEquals(price, order.getPrice());
+      assertEquals(timestamp, order.getTimestamp());
+   }
+
+   @Test
+   void testConstructorWithoutOrderId() {
+      TestOrder o = new TestOrder(username, type, orderType, size, price, timestamp);
+      assertEquals(-1, o.getOrderId());
+      assertEquals(username, o.getUsername());
+      assertEquals(type, o.getType());
+      assertEquals(orderType, o.getOrderType());
+      assertEquals(size, o.getSize());
+      assertEquals(size, o.getOriginalSize());
+      assertEquals(price, o.getPrice());
+      assertEquals(timestamp, o.getTimestamp());
+   }
+
+   @Test
+   void testSetAndGetOrderId() {
+      order.setOrderId(99);
+      assertEquals(99, order.getOrderId());
+   }
+
+   @Test
+   void testGetSizeAndSetSize() {
+      assertEquals(size, order.getSize());
+      order.setSize(800);
+      assertEquals(800, order.getSize());
+      // setSize with larger value should not increase tempSize
+      order.setSize(900);
+      assertEquals(800, order.getSize());
+      // setSize with same value
+      order.setSize(800);
+      assertEquals(800, order.getSize());
+   }
+
+   @Test
+   void testSetSizeWhenTempSizeNull() {
+      TestOrder o = new TestOrder(orderId, username, type, orderType, size, price, timestamp);
+      o.tempSize = null;
+      o.setSize(500);
+      assertEquals(500, o.getSize());
+   }
+
+   @Test
+   void testGetOriginalSize() {
+      order.setSize(500);
+      assertEquals(size, order.getOriginalSize());
+   }
+
+   @Test
+   void testToStringProducesJson() {
       String json = order.toString();
+      assertTrue(json.contains("\"orderId\""));
+      assertTrue(json.contains("\"username\""));
       assertTrue(json.contains("\"type\""));
       assertTrue(json.contains("\"orderType\""));
       assertTrue(json.contains("\"size\""));
       assertTrue(json.contains("\"price\""));
       assertTrue(json.contains("\"timestamp\""));
-   }
-
-   // ----- MarketOrder -----
-   @Test
-   void testMarketOrderConstructorAndGetters() {
-      MarketOrder order = new MarketOrder(Type.ask, 1500, 111111111L);
-      assertEquals(Type.ask, order.getType());
-      assertEquals(OrderType.market, order.getOrderType());
-      assertEquals(1500, order.getSize());
-      assertEquals(0, order.getPrice());
-      assertEquals(111111111L, order.getTimestamp());
-   }
-
-   @Test
-   void testMarketOrderToStringIsJson() {
-      MarketOrder order = new MarketOrder(Type.bid, 500, 222222222L);
-      String json = order.toString();
-      assertTrue(json.contains("\"orderType\""));
-      assertTrue(json.contains("\"market\"") || json.contains("\"orderType\":\"market\""));
-   }
-
-   // ----- StopOrder -----
-   @Test
-   void testStopOrderConstructorAndGetters() {
-      StopOrder order = new StopOrder(Type.bid, 3000, 45000, 333333333L);
-      assertEquals(Type.bid, order.getType());
-      assertEquals(OrderType.stop, order.getOrderType());
-      assertEquals(3000, order.getSize());
-      assertEquals(45000, order.getPrice());
-      assertEquals(333333333L, order.getTimestamp());
-   }
-
-   @Test
-   void testStopOrderToStringIsJson() {
-      StopOrder order = new StopOrder(Type.ask, 4000, 47000, 444444444L);
-      String json = order.toString();
-      assertTrue(json.contains("\"orderType\""));
-      assertTrue(json.contains("\"stop\"") || json.contains("\"orderType\":\"stop\""));
-   }
-
-   // ----- User -----
-   @Test
-   void testUserConstructorAndGettersSetters() {
-      User user = new User("alice", "password123");
-      assertEquals("alice", user.getUsername());
-      assertEquals("password123", user.getPassword());
-      assertFalse(user.isLogged());
-      user.setLogged(true);
-      assertTrue(user.isLogged());
-   }
-
-   @Test
-   void testUserToStringIsJson() {
-      User user = new User("bob", "secret");
-      String json = user.toString();
-      assertTrue(json.contains("\"username\""));
-      assertTrue(json.contains("\"password\""));
-      assertTrue(json.contains("\"logged\""));
-   }
-
-   // ----- OrderType enum -----
-   @Test
-   void testOrderTypeEnumValues() {
-      assertEquals(OrderType.market, OrderType.valueOf("market"));
-      assertEquals(OrderType.limit, OrderType.valueOf("limit"));
-      assertEquals(OrderType.stop, OrderType.valueOf("stop"));
-      assertArrayEquals(new OrderType[] { OrderType.market, OrderType.limit, OrderType.stop }, OrderType.values());
-   }
-
-   // ----- Type enum -----
-   @Test
-   void testTypeEnumValues() {
-      assertEquals(Type.ask, Type.valueOf("ask"));
-      assertEquals(Type.bid, Type.valueOf("bid"));
-      assertArrayEquals(new Type[] { Type.ask, Type.bid }, Type.values());
    }
 }

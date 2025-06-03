@@ -1,17 +1,20 @@
 package it.unipi.cross.orderbook;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableSet;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.Order;
+import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
 
@@ -20,8 +23,8 @@ public class OrderBook {
    // unique order IDs
    private final AtomicInteger idGenerator = new AtomicInteger(1);
 
-   // maps orderId to each Order (sync???)
-   private final ConcurrentMap<Integer, Order> orderMap = new ConcurrentHashMap<>();
+   // maps orderId to each Order
+   private final Map<Integer, Order> orderMap = new ConcurrentHashMap<>();
 
    // Limit orders book sides
    private final NavigableSet<LimitOrder> bidBook = new ConcurrentSkipListSet<>(
@@ -29,73 +32,101 @@ public class OrderBook {
    private final NavigableSet<LimitOrder> askBook = new ConcurrentSkipListSet<>(
          Comparator.comparingInt(LimitOrder::getPrice).thenComparingLong(LimitOrder::getTimestamp));
 
-   // To handle stop orders (sync???)
+   // To handle stop orders (used only in synchronized methods)
    private final List<StopOrder> stopOrders = new ArrayList<>();
 
    // Listeners for completion notification
-   private final OrderListener listener = new OrderListener();
+   // private final OrderListener listener = new OrderListener();
 
    private int bestBidPrice = -1;
    private int bestAskPrice = -1;
 
-   public OrderBook() {
+   public OrderBook(List<Order> orders) {
+      if (orders != null && !orders.isEmpty()) {
+         for (Order order : orders) {
+            orderMap.put(order.getOrderId(), order);
+         }
+
+         int lastId = Collections.max(orderMap.keySet());
+         idGenerator.set(lastId + 1);
+
+         for (Order order : orderMap.values()) {
+            if (order.getOrderType() == OrderType.limit) {
+               switch(order.getType()) {
+                  case ask:
+                     askBook.add((LimitOrder) order);
+                  case bid:
+                     bidBook.add((LimitOrder) order);
+               }
+            }
+         }
+      }
    }
 
    /**
-    * Inserts a new order into the order book and attempts to match it according to
-    * its type.
+    * Inserts an order into the order book.
     * <p>
-    * Supported order types are:
-    * <ul>
-    * <li>MarketOrder: Immediately attempts to match with the best available
-    * orders.</li>
-    * <li>LimitOrder: Adds to the bid or ask book and attempts to match if
-    * possible.</li>
-    * <li>StopOrder: Adds to the stop orders list and attempts to match if trigger
-    * conditions are met.</li>
-    * </ul>
+    * This method handles the insertion of different types of orders (limit, stop,
+    * market)
+    * into the order book. It assigns a unique order ID if necessary, checks for
+    * duplicate
+    * orders, and updates the relevant order book structures. For limit and stop
+    * orders,
+    * it attempts to match them using the matching algorithm. For market orders, it
+    * tries
+    * to execute the order immediately.
     * </p>
-    * 
-    * @param order the {@link Order} to be inserted and matched
-    * @return the generated order ID if the order was successfully matched or
-    *         added;
-    *         -1 if the order could not be processed
+    *
+    * @param order the {@link Order} to be inserted
+    * @return the assigned order ID if the order is successfully inserted and
+    *         processed;
+    *         -1 if the order is invalid, already exists, or could not be matched
+    *         (for market orders)
     */
    public synchronized int insertOrder(Order order) {
+
       if (order.getSize() <= 0)
          return -1;
 
-      int orderId = idGenerator.getAndIncrement();
-      order.setOrderId(orderId);
+      int orderId = order.getOrderId();
+      if (orderId == -1) {
+         orderId = idGenerator.getAndIncrement();
+         order.setOrderId(orderId);
+      }
 
+      if (orderMap.containsKey(orderId))
+         return -1;
       orderMap.put(orderId, order);
 
       Type type = order.getType();
 
-      boolean success = false;
-
       switch (order.getOrderType()) {
-         case market:
-            success = MatchingAlgorithm.matchMarketOrder(this, (MarketOrder) order);
-            break;
          case limit:
-            LimitOrder limitOrder = (LimitOrder) order;
-            if (type == Type.bid)
-               bidBook.add(limitOrder);
-            else if (type == Type.ask)
-               askBook.add(limitOrder);
-            success = MatchingAlgorithm.matchLimitOrder(this, limitOrder);
+            LimitOrder limit = (LimitOrder) order;
+            boolean completed = MatchingAlgorithm.matchLimitOrder(this, limit);
+            if (!completed) {
+               if (type == Type.bid)
+                  bidBook.add(limit);
+               else if (type == Type.ask)
+                  askBook.add(limit);
+               // check new prices after book update
+               checkBestPrices();
+            }
             break;
+
          case stop:
-            StopOrder stopOrder = (StopOrder) order;
-            stopOrders.add(stopOrder);
-            success = MatchingAlgorithm.matchStopOrder(this, stopOrder);
+            StopOrder stop = (StopOrder) order;
+            stopOrders.add(stop);
+            MatchingAlgorithm.matchStopOrder(this, stop);
             break;
+
+         case market:
+            boolean success = MatchingAlgorithm.matchMarketOrder(this, (MarketOrder) order);
+            return (success) ? orderId : -1;
       }
-      if (success)
-         return orderId;
-      else
-         return -1;
+
+      return orderId;
+
    }
 
    /**
@@ -113,25 +144,26 @@ public class OrderBook {
     *         otherwise
     */
    public synchronized boolean deleteOrder(int orderId) {
-      Order order = orderMap.remove(orderId);
-      if (order == null)
+      if (!orderMap.containsKey(orderId))
          return false;
 
-      switch (order.getOrderType()) {
-         case limit:
-            LimitOrder limitOrder = (LimitOrder) order;
-            Type type = limitOrder.getType();
-            if (type == Type.bid)
-               bidBook.remove(limitOrder);
-            else if (type == Type.ask)
-               askBook.remove(limitOrder);
-            break;
-         case stop:
-            stopOrders.remove(order);
-            break;
-         case market:
-            break;
+      Order order = orderMap.remove(orderId);
+
+      if (order.getOrderType() == OrderType.limit) {
+         LimitOrder limit = (LimitOrder) order;
+
+         Type type = limit.getType();
+         if (type == Type.bid)
+            bidBook.remove(limit);
+         else if (type == Type.ask)
+            askBook.remove(limit);
+
+         // check new prices after book update
+         checkBestPrices();
+      } else if (order.getOrderType() == OrderType.stop) {
+         stopOrders.remove((StopOrder) order);
       }
+      // no actions are needed to delete market orders
 
       return true;
    }
@@ -146,38 +178,71 @@ public class OrderBook {
       return askBook;
    }
 
-   public List<StopOrder> getStopOrders() {
-      return stopOrders;
-   }
-
-   public ConcurrentMap<Integer, Order> getOrderMap() {
+   public Map<Integer, Order> getOrderMap() {
       return orderMap;
    }
 
+   public int getBestBidPrice() {
+      return bestBidPrice;
+   }
+
+   public int getBestAskPrice() {
+      return bestAskPrice;
+   }
+
    /**
-    * public int getBestBidPrice() {
-    * return bestBidPrice;
-    * }
-    * 
-    * public int getBestAskPrice() {
-    * return bestAskPrice;
-    * }
-    * 
-    * public void complete(Order order) {
-    * // remove from orderbook
-    * // if market respond with orderId to user
-    * // archive trade
-    * // send notification of trade completion
-    * }
-    * 
-    * public void incomplete(Order order) {
-    * // remove from orderbook
-    * // if market respond with -1 to user
-    * }
-    * 
-    * public StopOrder getStopOrderById(int orderId) {
-    * return stopOrders.get(orderId);
-    * }
+    * Checks if the best bid or ask prices in the order book have changed.
+    * <p>
+    * Compares the current best bid and ask prices with the previously stored
+    * values.
+    * If either price has changed, updates the stored values, triggers a check for
+    * stop orders,
+    * and returns {@code true}. Otherwise, returns {@code false}.
+    *
+    * @return {@code true} if the best bid or ask price has changed; {@code false}
+    *         otherwise.
     */
+   public boolean checkBestPrices() {
+      int newBestBid = bidBook.isEmpty() ? -1 : bidBook.first().getPrice();
+      int newBestAsk = askBook.isEmpty() ? -1 : askBook.first().getPrice();
+      boolean changed = false;
+
+      if (newBestBid != bestBidPrice) {
+         bestBidPrice = newBestBid;
+         changed = true;
+      }
+      if (newBestAsk != bestAskPrice) {
+         bestAskPrice = newBestAsk;
+         changed = true;
+      }
+
+      if (changed) {
+         checkStopOrders();
+      }
+
+      return changed;
+   }
+
+   /**
+    * Checks all stop orders in the order book and removes those that are
+    * triggered.
+    * <p>
+    * Iterates through the list of stop orders and, for each stop order, determines
+    * if it should be executed using the
+    * {@link MatchingAlgorithm#matchStopOrder(OrderBook, StopOrder)} method.
+    * If a stop order is triggered, it is removed from the list.
+    * </p>
+    */
+   public void checkStopOrders() {
+
+      Iterator<StopOrder> it = stopOrders.iterator();
+      while (it.hasNext()) {
+         StopOrder stop = it.next();
+         if (MatchingAlgorithm.matchStopOrder(this, stop)) {
+            it.remove();
+         }
+      }
+
+   }
 
 }
