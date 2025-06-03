@@ -2,10 +2,13 @@ package it.unipi.cross.persistence;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
+import it.unipi.cross.config.ConfigException;
 import it.unipi.cross.config.ConfigReader;
 import it.unipi.cross.data.Order;
+import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.User;
 
 /**
@@ -36,18 +39,17 @@ public class PersistenceManager {
 
    private final String CONFIG_FILE = "src/main/resources/server_config.properties";
 
-   private final List<User> users;
-   private final List<Order> orders;
-   private final File userFile;
-   private final File orderFile;
+   private List<User> users;
+   private List<Order> orders;
+   private File userFile;
+   private File orderFile;
 
    public PersistenceManager(List<User> users, List<Order> orders) {
-      this.users = users;
-      this.orders = orders;
-      orders.removeIf(order -> order.getOrderType() != OrderType.limit);
+      this.users = (users != null) ? users : new ArrayList<>();
+      this.orders = (orders != null) ? orders : new ArrayList<>();
       
       try {
-         ConfigReader config = new ConfigReader(CONFIG_FILE)
+         ConfigReader config = new ConfigReader(CONFIG_FILE);
          userFile = new File(config.getString("persistence.user_file"));
          orderFile = new File(config.getString("persistence.order_file"));
       } catch (ConfigException e) {
@@ -65,6 +67,8 @@ public class PersistenceManager {
 
    public void saveAll() throws IOException {
       UserStore.saveUsers(users, userFile);
+
+      orders.removeIf(order -> order.getOrderType() != OrderType.limit);
       OrderStore.saveOrders(orders, orderFile);
    }
 

@@ -71,7 +71,6 @@ public class MatchingAlgorithm {
          }
       }
 
-      orderBook.getOrderMap().remove(market.getOrderId());
       if (market.getSize() > 0)
          return false;
       else
@@ -174,13 +173,7 @@ public class MatchingAlgorithm {
       }
 
       if (execute) {
-         // convert to market order
-         MarketOrder market = StopOrder.convertToMarket(stop);
-         orderBook.getOrderMap().remove(stop.getOrderId());
-         int result = orderBook.insertOrder(market);
-         if (result == -1) {
-            //what to do if its market order fails
-         }
+         
       }
 
       return execute;

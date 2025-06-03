@@ -51,11 +51,10 @@ public class OrderBook {
          idGenerator.set(lastId + 1);
 
          for (Order order : orderMap.values()) {
-            switch(order.getType()) {
-               case ask:
-                  askBook.add((LimitOrder) order);
-               case bid:
-                  bidBook.add((LimitOrder) order);
+            if (order.getType() == Type.ask) {
+               askBook.add((LimitOrder) order);
+            } else if (order.getType() == Type.bid) {
+               bidBook.add((LimitOrder) order);
             }
          }
       }
@@ -94,12 +93,12 @@ public class OrderBook {
 
       if (orderMap.containsKey(orderId))
          return -1;
-      orderMap.put(orderId, order);
-
+      
       Type type = order.getType();
 
       switch (order.getOrderType()) {
          case limit:
+            orderMap.put(orderId, order);
             LimitOrder limit = (LimitOrder) order;
             boolean completed = MatchingAlgorithm.matchLimitOrder(this, limit);
             if (!completed) {
@@ -113,6 +112,7 @@ public class OrderBook {
             break;
 
          case stop:
+            orderMap.put(orderId, order);
             StopOrder stop = (StopOrder) order;
             stopOrders.add(stop);
             MatchingAlgorithm.matchStopOrder(this, stop);
@@ -238,6 +238,15 @@ public class OrderBook {
          StopOrder stop = it.next();
          if (MatchingAlgorithm.matchStopOrder(this, stop)) {
             it.remove();
+
+            // convert to market order
+            MarketOrder market = StopOrder.convertToMarket(stop);
+            orderMap.remove(stop.getOrderId());
+            int fail = insertOrder(market);
+            if (fail == -1) {
+               // manage market insertion fail after conversion
+               System.err.println("Failed insertion of market order after conversion from stop order. orderId: " + stop.getOrderId());
+            }               
          }
       }
 
