@@ -6,6 +6,7 @@ import java.util.NavigableSet;
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
+import it.unipi.cross.data.Trade;
 import it.unipi.cross.data.Type;
 
 public class MatchingAlgorithm {
@@ -55,7 +56,8 @@ public class MatchingAlgorithm {
          int tradePrice = bookOrder.getPrice();
 
          // notify trade for both orders on the tradeSize and tradePrice
-         // ...
+         System.out.println(Trade.toString(market, tradeSize, tradePrice));
+         System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
 
          bookOrder.setSize(bookOrder.getSize() - tradeSize);
          market.setSize(market.getSize() - tradeSize);
@@ -119,7 +121,8 @@ public class MatchingAlgorithm {
          int tradePrice = bookOrder.getPrice();
 
          // notify trade for both orders on the tradeSize and tradePrice
-         // ...
+         System.out.println(Trade.toString(limit, tradeSize, tradePrice));
+         System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
 
          bookOrder.setSize(bookOrder.getSize() - tradeSize);
          limit.setSize(limit.getSize() - tradeSize);

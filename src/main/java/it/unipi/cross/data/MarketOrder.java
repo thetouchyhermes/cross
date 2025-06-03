@@ -14,6 +14,8 @@ package it.unipi.cross.data;
  */
 public class MarketOrder extends Order {
 
+   private transient boolean fromStopOrder = false;
+
    public MarketOrder(int orderId, String username, Type type, int size, long timestamp) {
       // Market orders do not have a price
       super(orderId, username, type, OrderType.market, size, 0, timestamp);
@@ -22,5 +24,13 @@ public class MarketOrder extends Order {
    public MarketOrder(String username, Type type, int size, long timestamp) {
       // Market orders do not have a price
       super(username, type, OrderType.market, size, 0, timestamp);
+   }
+
+   public boolean isFromStopOrder() {
+      return fromStopOrder;
+   }
+
+   public void setFromStopOrder() {
+      fromStopOrder = true;
    }
 }
