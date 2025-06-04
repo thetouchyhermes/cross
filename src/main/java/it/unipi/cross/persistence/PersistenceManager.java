@@ -5,39 +5,39 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import it.unipi.cross.config.ConfigException;
 import it.unipi.cross.config.ConfigReader;
 import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.User;
 
 /**
- * The {@code PersistenceManager} class is responsible for managing the
- * persistence
- * of {@link User} and {@link Order} objects. It loads and saves user and order
- * data
- * to files specified in a configuration properties file.
+ * The {@code PersistenceManager} class is responsible for managing the persistence
+ * of {@link User} and {@link Order} objects. It loads and saves user and order data
+ * from and to files specified in the configuration.
  * <p>
- * The file paths for user and order data are read from a configuration file
- * (default: {@code src/main/resources/server_config.properties}) using the
- * {@link ConfigReader}.
+ * The class uses {@link UserStore} and {@link OrderStore} for serialization and
+ * deserialization of users and orders, respectively. Only orders of type
+ * {@link OrderType#limit} are persisted when saving.
  * </p>
  *
+ * <p>
+ * Usage:
  * <ul>
- * <li>{@code loadAll()} loads users and orders from their respective files into
- * the provided lists.</li>
- * <li>{@code saveAll()} saves the current users and orders to their respective
- * files.</li>
+ *   <li>Instantiate with lists of users and orders (can be null).</li>
+ *   <li>Call {@link #loadAll()} to load data from files.</li>
+ *   <li>Call {@link #saveAll()} to persist current users and limit orders to files.</li>
  * </ul>
+ * </p>
  *
  * <p>
- * If the configuration file cannot be read, the application will print an error
- * and terminate.
+ * Configuration file keys required:
+ * <ul>
+ *   <li>{@code persistence.user_file} - Path to the user data file.</li>
+ *   <li>{@code persistence.order_file} - Path to the order data file.</li>
+ * </ul>
  * </p>
  */
 public class PersistenceManager {
-
-   private final String CONFIG_FILE = "src/main/resources/server_config.properties";
 
    private List<User> users;
    private List<Order> orders;
@@ -49,11 +49,12 @@ public class PersistenceManager {
       this.orders = (orders != null) ? orders : new ArrayList<>();
       
       try {
-         ConfigReader config = new ConfigReader(CONFIG_FILE);
+         ConfigReader config = new ConfigReader();
+         config.loadServer();
          userFile = new File(config.getString("persistence.user_file"));
          orderFile = new File(config.getString("persistence.order_file"));
-      } catch (ConfigException e) {
-         System.err.println(e.getMessage());
+      } catch (IOException e) {
+         System.err.println("[PersistenceManager] " + e.getMessage());
          System.exit(1);
       }      
    }
@@ -67,8 +68,6 @@ public class PersistenceManager {
 
    public void saveAll() throws IOException {
       UserStore.saveUsers(users, userFile);
-
-      orders.removeIf(order -> order.getOrderType() != OrderType.limit);
       OrderStore.saveOrders(orders, orderFile);
    }
 

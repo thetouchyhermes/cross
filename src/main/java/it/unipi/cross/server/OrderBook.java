@@ -1,4 +1,4 @@
-package it.unipi.cross.orderbook;
+package it.unipi.cross.server;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +17,7 @@ import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
+import it.unipi.cross.util.Response;
 
 public class OrderBook {
 
@@ -43,6 +44,7 @@ public class OrderBook {
 
    public OrderBook(List<Order> orders) {
       if (orders != null && !orders.isEmpty()) {
+         orderMap.clear();
          for (Order order : orders) {
             orderMap.put(order.getOrderId(), order);
          }
@@ -141,15 +143,17 @@ public class OrderBook {
     * @return {@code true} if the order was found and deleted; {@code false}
     *         otherwise
     */
-   public synchronized boolean deleteOrder(int orderId) {
-      if (!orderMap.containsKey(orderId))
-         return false;
+   public synchronized Response cancelOrder(int orderId, String username) {
+      Order order = orderMap.get(orderId);
 
-      Order order = orderMap.remove(orderId);
+      if (order == null)
+         return new Response(101, "order does not exist or has already been finalized");
+      if (!order.getUsername().equals(username))
+         return new Response(101, "order belongs to a different user");
 
+      orderMap.remove(orderId);
       if (order.getOrderType() == OrderType.limit) {
          LimitOrder limit = (LimitOrder) order;
-
          Type type = limit.getType();
          if (type == Type.bid)
             bidBook.remove(limit);
@@ -161,9 +165,9 @@ public class OrderBook {
       } else if (order.getOrderType() == OrderType.stop) {
          stopOrders.remove((StopOrder) order);
       }
-      // no actions are needed to delete market orders
+      // market orders cannot be canceled anyway
 
-      return true;
+      return new Response(100, "OK");
    }
 
    // matching algorithm access
@@ -250,6 +254,12 @@ public class OrderBook {
          }
       }
 
+   }
+
+   public List<Order> getOrderList() {
+      List<Order> orders = new ArrayList<>(orderMap.values());
+      orders.removeIf(order -> order.getOrderType() == OrderType.limit);
+      return orders;
    }
 
 }

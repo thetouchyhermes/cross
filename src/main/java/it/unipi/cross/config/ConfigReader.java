@@ -1,53 +1,83 @@
 package it.unipi.cross.config;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
 /**
- * ConfigReader is a utility class for reading configuration properties from a file.
- * It loads key-value pairs from a specified properties file and provides methods
+ * ConfigReader is a utility class for reading configuration properties from a
+ * file.
+ * It loads key-value pairs from a specified properties file and provides
+ * methods
  * to retrieve configuration values as strings or integers.
  *
- * <p>Example usage:
+ * <p>
+ * Example usage:
+ * 
  * <pre>
- *     ConfigReader config = new ConfigReader("config.properties");
- *     String host = config.getString("db.host");
- *     int port = config.getInt("db.port");
+ * ConfigReader config = new ConfigReader("config.properties");
+ * String host = config.getString("db.host");
+ * int port = config.getInt("db.port");
  * </pre>
  *
- * <p>If the configuration file is not found or cannot be loaded, or if a value
+ * <p>
+ * If the configuration file is not found or cannot be loaded, or if a value
  * cannot be parsed as an integer, a {@link ConfigException} is thrown.
  */
 public class ConfigReader {
 
+   private final String SERVER_CONFIG_FILE = "src/main/resources/server_config.properties";
+   private final String CLIENT_CONFIG_FILE = "src/main/resources/client_config.properties";
+
    private final Properties properties = new Properties();
 
+   public ConfigReader() {
+   }
+
    /**
-    * Constructs a ConfigReader that loads configuration properties from the specified file path.
+    * Loads properties from the specified file path into the {@code properties}
+    * object.
     *
-    * @param filePath the path to the configuration file to be loaded
-    * @throws ConfigException if the configuration file is not found or an error occurs while loading it
+    * @param filePath the path to the properties file to be loaded
+    * @throws IOException if an I/O error occurs while reading the file
     */
-   public ConfigReader(String filePath) throws ConfigException {
+   public void loadFile(String filePath) throws IOException {
       try (InputStream in = new FileInputStream(filePath)) {
          properties.load(in);
       }
-      catch (FileNotFoundException e) {
-         throw new ConfigException("Config file not found: " + filePath, e);
-      } catch (IOException e) {
-         throw new ConfigException("Error loading config file: " + filePath, e);
+   }
+
+   /**
+    * Loads properties from the default server configuration file into the
+    * {@code properties} object.
+    *
+    * @throws IOException if an I/O error occurs while reading the file
+    */
+   public void loadServer() throws IOException {
+      try (InputStream in = new FileInputStream(SERVER_CONFIG_FILE)) {
+         properties.load(in);
+      }
+   }
+
+   /**
+    * Loads properties from the default client configuration file into the
+    * {@code properties} object.
+    *
+    * @throws IOException if an I/O error occurs while reading the file
+    */
+   public void loadClient() throws IOException {
+      try (InputStream in = new FileInputStream(CLIENT_CONFIG_FILE)) {
+         properties.load(in);
       }
    }
 
    /**
     * Retrieves the value associated with the specified key from the properties.
-    * If the key is not found, an empty string is returned.
-    *
+    * 
     * @param key the property key to look up
-    * @return the value associated with the key, or an empty string if the key does not exist
+    * @return the value associated with the key, or an empty string if the key is
+    *         not found
     */
    public String getString(String key) {
       return properties.getProperty(key, "");
@@ -55,25 +85,19 @@ public class ConfigReader {
 
    /**
     * Retrieves the value associated with the specified key as an integer.
-    * <p>
-    * If the value is an empty string, returns -1. If the value cannot be parsed as an integer,
-    * a {@link ConfigException} is thrown.
-    * </p>
-    *
-    * @param key the configuration key whose associated value is to be returned
-    * @return the integer value associated with the specified key, or -1 if the value is empty
-    * @throws ConfigException if the value cannot be parsed as an integer
+    * 
+    * @param key the key whose associated value is to be returned as an integer
+    * @return the integer value associated with the specified key, or -1 if the
+    *         value is an empty string
+    * @throws NumberFormatException if the value cannot be parsed as an integer
     */
-   public int getInt(String key) throws ConfigException {
+   public int getInt(String key) throws NumberFormatException {
       String val = getString(key);
       if (val.equals("")) {
          return -1;
       }
-      try {
-         return Integer.parseInt(val);
-      } catch (NumberFormatException e) {
-         throw new ConfigException("Invalid integer for " + key + ": " + val, e);
-      }
+
+      return Integer.parseInt(val);
    }
 
 }

@@ -4,16 +4,25 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * Represents a user with a username, password, and login status.
+ * Represents a user with a username and password.
  * <p>
- * This class provides methods to access user credentials and manage the user's
- * login state.
+ * The {@code User} class provides methods to manage user credentials and login state.
+ * The {@code logged} field is marked as {@code transient} and is not serialized.
+ * </p>
+ *
+ * <p>
+ * Example usage:
+ * <pre>
+ *     User user = new User("alice", "password123");
+ *     user.login();
+ *     System.out.println(user.isLogged()); // true
+ * </pre>
  * </p>
  */
 public class User {
    private String username;
    private String password;
-   private boolean logged;
+   private transient boolean logged = false;
 
    public User(String username, String password) {
       this.username = username;
@@ -29,13 +38,22 @@ public class User {
       return password;
    }
 
+   public void setPassword(String newPassword) {
+      this.password = newPassword;
+   }
+
    public boolean isLogged() {
       return logged;
    }
 
-   public void setLogged(boolean logged) {
-      this.logged = logged;
+   public void login() {
+      this.logged = true;
    }
+
+   public void logout() {
+      this.logged = false;
+   }
+   
 
    @Override
    public String toString() {
