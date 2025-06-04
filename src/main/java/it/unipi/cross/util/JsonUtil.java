@@ -1,4 +1,4 @@
-package it.unipi.cross.persistence;
+package it.unipi.cross.util;
 
 import java.io.File;
 import java.io.FileReader;
@@ -16,13 +16,23 @@ public class JsonUtil {
    private static final Gson gson = new GsonBuilder().create();
 
    /**
-    * Reads a JSON file and deserializes its content into an object of the specified class.
+    * Converts the specified object into its JSON representation.
     *
-    * @param <T>   the type of the object to return
-    * @param file  the file to read from
+    * @param obj the object to be converted to JSON
+    * @return a JSON string representing the specified object
+    */
+   public static String toJson(Object obj) {
+      return gson.toJson(obj);
+   }
+
+   
+   /**
+    * Deserializes the specified JSON string into an object of the specified class.
+    *
+    * @param <T>   the type of the desired object
+    * @param json  the JSON string to deserialize
     * @param clazz the class of T
-    * @return an instance of T deserialized from the JSON file
-    * @throws IOException if an I/O error occurs while reading the file
+    * @return an object of type T deserialized from the JSON string
     */
    public static <T> T readFromFile(File file, Class<T> clazz) throws IOException {
       try (FileReader reader = new FileReader(file)) {
@@ -42,4 +52,5 @@ public class JsonUtil {
          gson.toJson(obj, writer);
       }
    }
+   
 }
