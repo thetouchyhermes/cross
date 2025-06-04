@@ -11,9 +11,9 @@ public class Trade {
       }
 
       return "{\"orderId\": " + order.getOrderId() +
-            ", \"type\": " + order.getType() +
-            ", \"orderType\": " + orderType +
-            ", \"size\": " + size +
+            ", \"type\": \"" + order.getType() +
+            "\", \"orderType\": \"" + orderType +
+            "\", \"size\": " + size +
             ", \"price\": " + price +
             ", \"timestamp\": " + System.currentTimeMillis() +
             "}";

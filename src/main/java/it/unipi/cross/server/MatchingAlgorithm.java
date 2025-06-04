@@ -43,38 +43,57 @@ public class MatchingAlgorithm {
 
       NavigableSet<LimitOrder> oppositeBook = (type == Type.bid) ? orderBook.getAskBook() : orderBook.getBidBook();
 
-      Iterator<LimitOrder> it = oppositeBook.iterator();
+      // simulate matching to see if the market order will fail
+      Iterator<LimitOrder> simIter = oppositeBook.iterator();
+      int marketSize = market.getSize();
 
-      while (market.getSize() > 0 && it.hasNext()) {
-         LimitOrder bookOrder = it.next();
+      while (marketSize > 0 && simIter.hasNext()) {
+         LimitOrder simBookOrder = simIter.next();
 
-         if (market.getUsername().equals(bookOrder.getUsername()))
+         if (market.getUsername().equals(simBookOrder.getUsername()))
             continue;
 
-         int tradeSize = Math.min(market.getSize(), bookOrder.getSize());
+         int simTradeSize = Math.min(marketSize, simBookOrder.getSize());
+         marketSize -= simTradeSize;
+      }
 
-         int tradePrice = bookOrder.getPrice();
+      if (marketSize == 0) {
+         // create the real trades because market order didn't fail
+         Iterator<LimitOrder> rmIter = oppositeBook.iterator();
+         boolean changedBest = false;
 
-         // notify trade for both orders on the tradeSize and tradePrice
-         System.out.println(Trade.toString(market, tradeSize, tradePrice));
-         System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
+         while (market.getSize() > 0 && rmIter.hasNext()) {
+            LimitOrder bookOrder = rmIter.next();
 
-         bookOrder.setSize(bookOrder.getSize() - tradeSize);
-         market.setSize(market.getSize() - tradeSize);
+            if (market.getUsername().equals(bookOrder.getUsername()))
+               continue;
+            
+            int tradeSize = Math.min(market.getSize(), bookOrder.getSize());
+            int tradePrice = bookOrder.getPrice();
 
-         if (bookOrder.getSize() == 0) {
-            orderBook.getOrderMap().remove(bookOrder.getOrderId());
-            it.remove();
+            // notify trade for both orders on the tradeSize and tradePrice
+            System.out.println(Trade.toString(market, tradeSize, tradePrice));
+            System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
+            
+            market.setSize(market.getSize() - tradeSize);
+            bookOrder.setSize(bookOrder.getSize() - tradeSize);
 
+            if (bookOrder.getSize() == 0) {
+               orderBook.getOrderMap().remove(bookOrder.getOrderId());
+               rmIter.remove();
+               changedBest = true;
+            }
+         }
+
+         if (changedBest) {
             // check new prices after book update
             orderBook.checkBestPrices();
          }
-      }
 
-      if (market.getSize() > 0)
-         return false;
-      else
          return true;
+      } else {
+         return false;
+      }
    }
 
    /**
@@ -170,10 +189,6 @@ public class MatchingAlgorithm {
          bestBookPrice = orderBook.getBestBidPrice();
          if (bestBookPrice != -1 && bestBookPrice <= stopPrice)
             execute = true;
-      }
-
-      if (execute) {
-         
       }
 
       return execute;

@@ -83,7 +83,7 @@ public class OrderBook {
     */
    public synchronized int insertOrder(Order order) {
 
-      if (order.getSize() <= 0)
+      if (order.getOriginalSize() <= 0)
          return -1;
 
       int orderId = order.getOrderId();

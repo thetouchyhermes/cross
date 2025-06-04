@@ -33,17 +33,17 @@ public abstract class Order {
    protected final String username;
    protected final Type type;
    protected final OrderType orderType;
-   protected final int size;  // millesimi di BTC
+   protected int size;  // millesimi di BTC
    protected final int price; // millesimi di USD
    protected final long timestamp;
-   protected transient Integer tempSize;
+   protected transient final Integer originalSize;
 
    public Order(int orderId, String username, Type type, OrderType orderType, int size, int price, long timestamp) {
       this.orderId = orderId;
       this.username = username;
       this.type = type;
       this.orderType = orderType;
-      this.size = this.tempSize = size;
+      this.size = this.originalSize = size;
       this.price = price;
       this.timestamp = timestamp;
    }
@@ -52,7 +52,7 @@ public abstract class Order {
       this.username = username;
       this.type = type;
       this.orderType = orderType;
-      this.size = this.tempSize = size;
+      this.size = this.originalSize = size;
       this.price = price;
       this.timestamp = timestamp;
    }
@@ -78,22 +78,16 @@ public abstract class Order {
    }
 
    public int getSize() {
-      if (tempSize == null)
-         tempSize = size;
-
-      return tempSize;
+      return size;
    }
 
    public void setSize(int size) {
-      if (tempSize == null)
-         tempSize = this.size;
-
-      if (size <= this.tempSize)
-         this.tempSize = size;
+      if (size <= this.size)
+         this.size = size;
    }
 
    public int getOriginalSize() {
-      return size;
+      return originalSize;
    }
 
    public int getPrice() {
