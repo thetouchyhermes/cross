@@ -44,7 +44,6 @@ public class OrderBook {
 
    public OrderBook(List<Order> orders) {
       if (orders != null && !orders.isEmpty()) {
-         orderMap.clear();
          for (Order order : orders) {
             orderMap.put(order.getOrderId(), order);
          }
@@ -256,9 +255,14 @@ public class OrderBook {
 
    }
 
+   /**
+    * Retrieves a list of all limit orders from the order book.
+    *
+    * @return a {@code List<Order>} containing only limit orders.
+    */
    public List<Order> getOrderList() {
       List<Order> orders = new ArrayList<>(orderMap.values());
-      orders.removeIf(order -> order.getOrderType() == OrderType.limit);
+      orders.removeIf(order -> order.getOrderType() != OrderType.limit);
       return orders;
    }
 

@@ -10,6 +10,22 @@ import com.google.gson.GsonBuilder;
  * order type, size, price, and timestamp. It is intended to be extended by specific
  * order implementations.
  * </p>
+ * <p>
+ * <b>Constructors:</b>
+ * <ul>
+ *   <li>
+ *     <code>Order(int orderId, String username, Type type, OrderType orderType, int size, int price, long timestamp)</code>:
+ *     Used when the order ID is already known (e.g., when loading from a database). All fields must be provided.
+ *   </li>
+ *   <li>
+ *     <code>Order(String username, Type type, OrderType orderType, int size, int price, long timestamp)</code>:
+ *     Used when creating a new order before an order ID is assigned (e.g., for testing or new order creation).
+ *     The order ID will remain at its default value (-1) until set.
+ *   </li>
+ * </ul>
+ * Both constructors initialize the <code>size</code> and <code>tempSize</code> fields to the provided size value,
+ * ensuring consistent state for testing and order processing.
+ * </p>
  */
 public abstract class Order {
 

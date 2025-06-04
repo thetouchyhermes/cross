@@ -11,9 +11,14 @@ import it.unipi.cross.util.Response;
 public class UserBook {
    private final Map<String, User> userMap = new ConcurrentHashMap<>();
 
+   /**
+    * Constructs a UserBook by initializing the internal user map with the provided list of users.
+    * Each user is added to the map using their username as the key.
+    *
+    * @param users the list of User objects to be added to the UserBook; if null or empty, no users are added
+    */
    public UserBook(List<User> users) {
       if (users != null && !users.isEmpty()) {
-         userMap.clear();
          for (User user : users) {
             userMap.put(user.getUsername(), user);
          }
@@ -67,6 +72,11 @@ public class UserBook {
       return new Response(100, "OK");
    }
 
+   /**
+    * Returns a list of all users currently stored in the user map.
+    *
+    * @return a new {@link List} containing all {@link User} objects from the user map
+    */
    public List<User> getUserList() {
       return new ArrayList<>(userMap.values());
    }
