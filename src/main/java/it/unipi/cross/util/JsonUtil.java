@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -65,4 +67,21 @@ public class JsonUtil {
       }
    }
    
+   public static Map<String, Object> convertStringToObjectMap(Map<String, String> map) {
+      Map<String, Object> oMap = new HashMap<>();
+      for (Map.Entry<String, String> entry : map.entrySet()) {
+         oMap.put(entry.getKey(), entry.getValue());
+      }
+
+      return oMap;
+   }
+
+   public static Map<String, String> convertObjectToStringMap (Map<String, Object> map) {
+      Map<String, String> sMap = new HashMap<>();
+      for (Map.Entry<String, Object> entry : map.entrySet()) {
+         sMap.put(entry.getKey(), entry.getValue().toString());
+      }
+
+      return sMap;
+   }
 }
