@@ -77,9 +77,6 @@ public class SocketTask implements Runnable {
             Request request = new Request();
             request.setOperation(operation);
             request.setValues(values);
-
-            //to delete
-            System.out.println(request.toString());
             
             //generate Response
             Response response = ResponseFactory.create(request);
