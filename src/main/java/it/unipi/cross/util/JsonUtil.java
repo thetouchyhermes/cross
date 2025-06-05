@@ -16,23 +16,35 @@ public class JsonUtil {
    private static final Gson gson = new GsonBuilder().create();
 
    /**
-    * Converts the specified object into its JSON representation.
+    * Converts the given object to its JSON string representation.
     *
     * @param obj the object to be converted to JSON
-    * @return a JSON string representing the specified object
+    * @return a JSON string representing the given object
     */
    public static String toJson(Object obj) {
       return gson.toJson(obj);
    }
 
-   
    /**
     * Deserializes the specified JSON string into an object of the specified class.
     *
-    * @param <T>   the type of the desired object
     * @param json  the JSON string to deserialize
     * @param clazz the class of T
-    * @return an object of type T deserialized from the JSON string
+    * @param <T>   the type of the desired object
+    * @return      an object of type T from the JSON string
+    */
+   public static <T> T fromJson(String json, Class<T> clazz) {
+      return gson.fromJson(json, clazz);
+   }
+
+   /**
+    * Reads a JSON file and deserializes its content into an object of the specified class.
+    *
+    * @param <T>   the type of the object to return
+    * @param file  the JSON file to read from
+    * @param clazz the class of T
+    * @return an instance of T deserialized from the JSON file
+    * @throws IOException if an I/O error occurs while reading the file
     */
    public static <T> T readFromFile(File file, Class<T> clazz) throws IOException {
       try (FileReader reader = new FileReader(file)) {

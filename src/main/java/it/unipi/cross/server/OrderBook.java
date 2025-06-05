@@ -260,7 +260,7 @@ public class OrderBook {
     *
     * @return a {@code List<Order>} containing only limit orders.
     */
-   public List<Order> getOrderList() {
+   public synchronized List<Order> getOrderList() {
       List<Order> orders = new ArrayList<>(orderMap.values());
       orders.removeIf(order -> order.getOrderType() != OrderType.limit);
       return orders;

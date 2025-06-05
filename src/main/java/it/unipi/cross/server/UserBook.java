@@ -9,6 +9,7 @@ import it.unipi.cross.data.User;
 import it.unipi.cross.util.Response;
 
 public class UserBook {
+
    private final Map<String, User> userMap = new ConcurrentHashMap<>();
 
    /**
