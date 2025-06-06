@@ -154,9 +154,9 @@ public class ClientMain {
                tcpClient.sendRequest(request);
                Response response = tcpClient.receiveResponse();
 
-               if (operation.equals("exit"))
+               if (response == null || operation.equals("exit"))
                   System.exit(0);
-
+                  
                if (response instanceof MessageResponse) {
                   MessageResponse messageResponse = (MessageResponse) response;
 

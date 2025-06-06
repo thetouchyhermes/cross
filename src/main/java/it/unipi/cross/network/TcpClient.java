@@ -76,16 +76,11 @@ public class TcpClient implements Closeable {
                   if (msg.getResponse() == 500) {
                      serverRunning = false;
                      System.out.println("[Client " + socket.getLocalPort() + "] server closed the connection");
-                     receivedResponse = null;
-                     running = false;
-                     readyResponse = false;
                      System.exit(1);
                   }
                }
                if (line == null) {
                   System.out.println("[Client " + socket.getLocalPort() + "] disconnected from server");
-                  running = false;
-                  receivedResponse = null;
                   System.exit(1);
                }
 
@@ -102,7 +97,6 @@ public class TcpClient implements Closeable {
          }
       });
 
-      receiverThread.setDaemon(true);
       receiverThread.start();
    }
 
@@ -156,7 +150,9 @@ public class TcpClient implements Closeable {
    @Override
    public void close() {
       running = false;
-      if (receiverThread != null) {
+      readyResponse = true;
+      receivedResponse = null;
+      if (receiverThread != null && !receiverThread.isAlive()) {
          receiverThread.interrupt();
       }
       try {
