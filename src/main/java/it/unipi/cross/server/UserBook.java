@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import it.unipi.cross.data.User;
-import it.unipi.cross.util.MessageResponse;
+import it.unipi.cross.json.MessageResponse;
 
 public class UserBook {
 
@@ -68,6 +68,7 @@ public class UserBook {
          return new MessageResponse(103, "new password equal to old one");
       }
 
+      user.setPassword(newPassword);
       return new MessageResponse(100, "OK");
    }
 

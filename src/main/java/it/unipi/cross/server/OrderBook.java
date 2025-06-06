@@ -17,7 +17,7 @@ import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
-import it.unipi.cross.util.Response;
+import it.unipi.cross.json.Response;
 
 public class OrderBook {
 

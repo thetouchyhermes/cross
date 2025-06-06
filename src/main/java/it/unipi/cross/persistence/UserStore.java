@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import it.unipi.cross.data.User;
-import it.unipi.cross.util.JsonUtil;
+import it.unipi.cross.json.JsonUtil;
 
 /**
  * Handles persistence operations for {@link User} objects using a JSON file.

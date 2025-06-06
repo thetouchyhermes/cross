@@ -2,71 +2,63 @@ package it.unipi.cross.persistence;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
-import it.unipi.cross.config.ConfigReader;
 import it.unipi.cross.data.Order;
-import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.User;
 
+
 /**
- * The {@code PersistenceManager} class is responsible for managing the persistence
- * of {@link User} and {@link Order} objects. It loads and saves user and order data
- * from and to files specified in the configuration.
+ * The {@code PersistenceManager} class provides methods to manage the persistence
+ * of {@link User} and {@link Order} objects to and from files.
  * <p>
- * The class uses {@link UserStore} and {@link OrderStore} for serialization and
- * deserialization of users and orders, respectively. Only orders of type
- * {@link OrderType#limit} are persisted when saving.
+ * It encapsulates file paths for user and order data, and delegates the actual
+ * loading and saving operations to {@link UserStore} and {@link OrderStore}.
  * </p>
  *
  * <p>
- * Usage:
- * <ul>
- *   <li>Instantiate with lists of users and orders (can be null).</li>
- *   <li>Call {@link #loadAll()} to load data from files.</li>
- *   <li>Call {@link #saveAll()} to persist current users and limit orders to files.</li>
- * </ul>
- * </p>
- *
- * <p>
- * Configuration file keys required:
- * <ul>
- *   <li>{@code persistence.user_file} - Path to the user data file.</li>
- *   <li>{@code persistence.order_file} - Path to the order data file.</li>
- * </ul>
+ * Usage example:
+ * <pre>
+ *     PersistenceManager pm = new PersistenceManager("users.dat", "orders.dat");
+ *     List&lt;User&gt; users = new ArrayList&lt;&gt;();
+ *     List&lt;Order&gt; orders = new ArrayList&lt;&gt;();
+ *     pm.loadAll(users, orders);
+ *     // ... modify users and orders ...
+ *     pm.saveAll(users, orders);
+ * </pre>
  * </p>
  */
 public class PersistenceManager {
 
-   private List<User> users;
-   private List<Order> orders;
    private File userFile;
    private File orderFile;
 
-   public PersistenceManager(List<User> users, List<Order> orders) {
-      this.users = (users != null) ? users : new ArrayList<>();
-      this.orders = (orders != null) ? orders : new ArrayList<>();
-      
-      try {
-         ConfigReader config = new ConfigReader();
-         config.loadServer();
-         userFile = new File(config.getString("persistence.user_file"));
-         orderFile = new File(config.getString("persistence.order_file"));
-      } catch (IOException e) {
-         System.err.println("[PersistenceManager] " + e.getMessage());
-         System.exit(1);
-      }      
+   public PersistenceManager(String userFilePath, String orderFilePath) {
+      this.userFile = new File(userFilePath);
+      this.orderFile = new File(orderFilePath);
    }
 
-   public void loadAll() throws IOException {
+   public void loadAll(List<User> users, List<Order> orders) throws IOException {
       users.clear();
-      users.addAll(UserStore.loadUsers(userFile));
       orders.clear();
-      orders.addAll(OrderStore.loadOrders(orderFile));
+
+      if (userFile.exists() && userFile.length() > 0) {
+         users.addAll(UserStore.loadUsers(userFile));
+      }
+      if (orderFile.exists() && orderFile.length() > 0) {
+         orders.addAll(OrderStore.loadOrders(orderFile));
+      }
+      
    }
 
-   public void saveAll() throws IOException {
+   public void saveAll(List<User> users, List<Order> orders) throws IOException {
+      if (userFile.getParentFile() != null) {
+         userFile.getParentFile().mkdirs();
+      }
+      if (orderFile.getParentFile() != null) {
+         orderFile.getParentFile().mkdirs();
+      }
+      
       UserStore.saveUsers(users, userFile);
       OrderStore.saveOrders(orders, orderFile);
    }
