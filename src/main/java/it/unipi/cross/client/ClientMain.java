@@ -32,21 +32,20 @@ public class ClientMain {
       
       // Handler function for normal termination, exception and anomalous interruption
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-
-         running = false;
-         
+      
          if (tcpClient != null && tcpClient.isAlive()) {
             Request logout = new Request();
             logout.setOperation("logout");
             try {
-               System.out.println("entrato in logout");
                tcpClient.sendRequest(logout);
-               System.out.println("uscito da logout");
+               System.out.println("hello?");
             } catch (IOException e) {
                Prompt.printError("[ClientMain] server didn't close this socket");
             }
 
+            System.out.println("hello2");
             tcpClient.close();
+            System.out.println("hello3");
          }
 
          if (udpListener != null) {
@@ -84,7 +83,7 @@ public class ClientMain {
       try{
          tcpClient.connect();
       } catch (IOException e) {
-         Prompt.printError("[ClientMain] error during TCP connection");
+         Prompt.printError("[Client] server not available");
          System.exit(1);
       }
 
@@ -151,12 +150,13 @@ public class ClientMain {
                   default:
                }
 
+               System.out.println(request.toString());
                tcpClient.sendRequest(request);
                Response response = tcpClient.receiveResponse();
 
                if (response == null || operation.equals("exit"))
                   System.exit(0);
-                  
+
                if (response instanceof MessageResponse) {
                   MessageResponse messageResponse = (MessageResponse) response;
 
@@ -204,7 +204,7 @@ public class ClientMain {
                         System.exit(1);
                      case -1:
                         if (username.isEmpty()) {
-                           System.out.println("user not logged in:\n" + response.toString());
+                           System.out.println("user not logged in");
                            break;
                         }
                         System.out.println("order failed or discarded:\n" + response.toString());

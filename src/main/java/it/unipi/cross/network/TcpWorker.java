@@ -65,6 +65,7 @@ public class TcpWorker implements Runnable {
          }
          if (!username.isEmpty()) {
             userBook.logout(username);
+            username = "";
          }
          if (Thread.currentThread().isInterrupted()) {
             Response error = new MessageResponse(500, "internal server error");
@@ -76,6 +77,8 @@ public class TcpWorker implements Runnable {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
          System.err.println("[Server] error on socket of client " + socket.getPort());
+      } catch (Exception e) {
+         System.err.println("[Server] generic error for client " + socket.getPort());
       } finally {
          try {
             socket.close();
@@ -95,7 +98,7 @@ public class TcpWorker implements Runnable {
       if (operation == null || operation.isEmpty())
          return null;
 
-      Map<String, String> values = JsonUtil.convertObjectToStringMap(request.getValues());
+      Map<String, Object> values = request.getValues();
 
       Response response = null;
 
@@ -106,13 +109,13 @@ public class TcpWorker implements Runnable {
                response = new MessageResponse(103, "user currently logged in");
                break;
             }
-            if (values.get("password").isBlank()) {
+            if (values.get("password").toString().isBlank()) {
                response = new MessageResponse(101, "invalid password");
                break;
             }
             response = userBook.register(
-                  values.get("username"),
-                  values.get("password"));
+                  values.get("username").toString(),
+                  values.get("password").toString());
             break;
          case "updateCredentials":
             if (!username.isEmpty()) {
@@ -120,9 +123,11 @@ public class TcpWorker implements Runnable {
                break;
             }
             response = userBook.updateCredentials(
-                  values.get("username"),
-                  values.get("old_password"),
-                  values.get("new_password"));
+                  values.get("username")
+                        .toString(),
+                  values.get("old_password")
+                        .toString(),
+                  values.get("new_password").toString());
             break;
          case "login":
             if (!username.isEmpty()) {
@@ -131,13 +136,14 @@ public class TcpWorker implements Runnable {
                break;
             }
             MessageResponse messageResponse = userBook.login(
-                  values.get("username"),
-                  values.get("password"));
+                  values.get("username")
+                        .toString(),
+                  values.get("password").toString());
 
             if (messageResponse.getResponse() == 100) {
-               username = values.get("username");
+               username = values.get("username").toString();
             }
-            
+
             response = messageResponse;
             break;
          case "logout":
@@ -154,50 +160,77 @@ public class TcpWorker implements Runnable {
                response = new OrderResponse(-1);
                break;
             }
-            LimitOrder limit = new LimitOrder(
-                  username,
-                  Type.valueOf(values.get("type")),
-                  Integer.parseInt(values.get("size")),
-                  Integer.parseInt(values.get("price")),
-                  System.currentTimeMillis());
-            response = new OrderResponse(orderBook.insertOrder(limit));
+            try {
+               int size = ((Number) values.get("size")).intValue();
+               int price = ((Number) values.get("price")).intValue();
+               LimitOrder limit = new LimitOrder(
+                     username,
+                     Type.valueOf(values.get("type")
+                           .toString()),
+                     size,
+                     price,
+                     System.currentTimeMillis());
+               response = new OrderResponse(orderBook.insertOrder(limit));
+            } catch (Exception e) {
+               System.err.println(e.getClass() + ": " + e.getMessage());
+               response = new OrderResponse(-1);
+            }
             break;
          case "insertMarketOrder":
             if (username.isEmpty()) {
                response = new OrderResponse(-1);
                break;
             }
-           MarketOrder market = new MarketOrder(
-                  username,
-                  Type.valueOf(values.get("type")),
-                  Integer.parseInt(values.get("size")),
-                  System.currentTimeMillis());
-            response = new OrderResponse(orderBook.insertOrder(market));
+            try {
+               int size = ((Number) values.get("size")).intValue();
+               MarketOrder market = new MarketOrder(
+                     username,
+                     Type.valueOf(values.get("type")
+                           .toString()),
+                     size,
+                     System.currentTimeMillis());
+               response = new OrderResponse(orderBook.insertOrder(market));
+            } catch (Exception e) {
+               System.err.println(e.getClass() + ": " + e.getMessage());
+               response = new OrderResponse(-1);
+            }
             break;
          case "insertStopOrder":
             if (username.isEmpty()) {
                response = new OrderResponse(-1);
                break;
             }
-            StopOrder stop = new StopOrder(
-                  username,
-                  Type.valueOf(values.get("type")),
-                  Integer.parseInt(values.get("size")),
-                  Integer.parseInt(values.get("price")),
-                  System.currentTimeMillis());
-            response = new OrderResponse(orderBook.insertOrder(stop));
+            try {
+               int size = ((Number) values.get("size")).intValue();
+               int price = ((Number) values.get("price")).intValue();
+               StopOrder stop = new StopOrder(
+                     username,
+                     Type.valueOf(values.get("type")
+                           .toString()),
+                     size,
+                     price,
+                     System.currentTimeMillis());
+               response = new OrderResponse(orderBook.insertOrder(stop));
+            } catch (Exception e) {
+               System.err.println(e.getClass() + ": " + e.getMessage());
+               response = new OrderResponse(-1);
+            }
             break;
          case "cancelOrder":
             if (username.isEmpty()) {
                response = new MessageResponse(101, "user not logged in");
             }
-            response = orderBook.cancelOrder(
-                  Integer.parseInt(values.get("orderId")),
-                  username);
+            try {
+               int orderId = ((Number) values.get("orderId")).intValue();
+               response = orderBook.cancelOrder(orderId, username);
+            } catch (Exception e) {
+               System.err.println(e.getClass() + ": " + e.getMessage());
+               response = new OrderResponse(-1);
+            }
             break;
          case "getPriceHistory":
             PriceHistory history = new PriceHistory();
-            // history.getPriceHistory(values.get("month"));
+            history.getPriceHistory(values.get("month").toString());
             break;
          case "exit":
             if (!username.isEmpty()) {

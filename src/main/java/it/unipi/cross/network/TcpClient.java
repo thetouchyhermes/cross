@@ -136,9 +136,9 @@ public class TcpClient implements Closeable {
 
    public Response receiveResponse() throws IOException {
       Response response = null;
+      while (!readyResponse) {
+      }
       synchronized (obj) {
-         while (!readyResponse) {
-         }
          if (running)
             response = receivedResponse;
 
