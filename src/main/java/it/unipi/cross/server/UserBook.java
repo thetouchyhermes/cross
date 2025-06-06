@@ -40,10 +40,15 @@ public class UserBook {
    public synchronized MessageResponse login(String username, String password) {
       // username must be already cleared from null or isEmpty cases
       User user = userMap.get(username);
-      if (user == null)
+      if (user == null) {
          return new MessageResponse(101, "non existent username");
-      if (!user.getPassword().equals(password))
+      }
+      if (!user.getPassword().equals(password)) {
          return new MessageResponse(101, "username/password mismatch");
+      }
+      if (user.isLogged()) {
+         return new MessageResponse(102, "user already logged in");
+      }
 
       user.login();
       return new MessageResponse(100, "OK");
@@ -60,12 +65,17 @@ public class UserBook {
    public synchronized MessageResponse updateCredentials(String username, String oldPassword, String newPassword) {
       // username and passwords must be already cleared from null or isEmpty cases
       User user = userMap.get(username);
-      if (user == null)
+      if (user == null) {
          return new MessageResponse(102, "non existent username");
-      if (!user.getPassword().equals(oldPassword))
+      }
+      if (!user.getPassword().equals(oldPassword)) {
          return new MessageResponse(102, "username/password mismatch");
+      }
       if (newPassword.equals(oldPassword)) {
          return new MessageResponse(103, "new password equal to old one");
+      }
+      if (user.isLogged()) {
+         return new MessageResponse(104, "user currently logged in");
       }
 
       user.setPassword(newPassword);

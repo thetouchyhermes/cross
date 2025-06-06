@@ -55,7 +55,7 @@ public class TcpServer {
                }
 
                TcpWorker worker = new TcpWorker(socket, orderBook, userBook);
-               threadPool.submit(worker);
+               threadPool.submit(worker, activeSockets);
             } catch (IOException e) {
                if (running)
                   throw e;
@@ -64,7 +64,7 @@ public class TcpServer {
             }
          }
       } finally {
-         stop();
+         // ...
       }
    }
 
@@ -77,23 +77,23 @@ public class TcpServer {
          threadPool.shutdownNow();
          synchronized (activeSockets) {
             for (Socket s : activeSockets) {
-               System.out.println("closing " + s);
-               s.close();
-               System.out.println("closed " + s);
-
+               if (s != null && !s.isClosed()) {
+                  s.close();
+                  System.out.println("[Server] stopped client " + s.getPort());
+               }
             }
             activeSockets.clear();
          }
 
          try {
             if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
-               System.err.println("Executor did not terminate in the specified time.");
+               System.err.println("[Server] executor did not terminate in the specified time.");
             }
          } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
          }
       } catch (IOException e) {
-         System.err.println("[TcpServer] Error closing server socket");
+         System.err.println("[Server] error closing server socket");
          // ignore
       }
       shutdown();
@@ -103,6 +103,5 @@ public class TcpServer {
       if (threadPool != null && !threadPool.isShutdown()) {
          threadPool.shutdownNow();
       }
-      System.out.println("[TcpServer] Server stopped");
    }
 }

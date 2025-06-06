@@ -59,7 +59,7 @@ public class TcpClient implements Closeable {
       running = true;
       startReceiverThread();
 
-      System.out.println("[TcpClient] Connected to server with " + socket);
+      System.out.println("[Client " + socket.getLocalPort() + "] connected to server");
    }
 
    private void startReceiverThread() {
@@ -69,25 +69,23 @@ public class TcpClient implements Closeable {
             while (running && !Thread.currentThread().isInterrupted()) {
                line = in.readLine();
 
-               if (line == null)  {
-                  System.out.println("[TcpClient] Server closed the connection");
-                  serverRunning = false;
-                  receivedResponse = null;
-                  close();
-                  break;
-               }
                Response response = stringToResponse(line);
                if (response != null && response instanceof MessageResponse) {
                   MessageResponse msg = (MessageResponse) response;
                   if (msg.getResponse() == 500) {
-                     System.out.println("[TcpClient] Server disconnected from socket");
                      serverRunning = false;
+                     System.out.println("[Client " + socket.getLocalPort() + "] server closed the connection");
+                     running = false;
                      receivedResponse = null;
-                     close();
-                     break;
+                     System.exit(1);
                   }
                }
-               System.out.println("[TcpClient] Received response: " + response);
+               if (line == null) {
+                  System.out.println("[Client " + socket.getLocalPort() + "] disconnected from server");
+                  running = false;
+                  receivedResponse = null;
+                  System.exit(1);
+               }
 
                synchronized (obj) {
                   receivedResponse = response;
@@ -98,10 +96,11 @@ public class TcpClient implements Closeable {
             if (running) {
                System.err.println("[TcpClient] Receiver thread error: " + e.getMessage());
             }
-            close();
+            System.exit(1);
          }
       });
 
+      receiverThread.setDaemon(true);
       receiverThread.start();
    }
 
@@ -160,24 +159,23 @@ public class TcpClient implements Closeable {
       running = false;
       if (receiverThread != null) {
          receiverThread.interrupt();
-         try {
-            receiverThread.join();
-         } catch (InterruptedException ignored) {
-         }
       }
       try {
-         if (in != null)
-            in.close();
-      } catch (IOException ignored) {
-      }
-      try {
-         if (out != null)
-            out.close();
-      } catch (IOException ignored) {
-      }
-      try {
-         if (socket != null)
+         if (socket != null && !socket.isClosed()) {
             socket.close();
+         }
+      } catch (IOException ignored) {
+      }
+      try {
+         if (in != null) {
+            in.close();
+         }
+      } catch (IOException ignored) {
+      }
+      try {
+         if (out != null) {
+            out.close();
+         }
       } catch (IOException ignored) {
       }
       in = null;

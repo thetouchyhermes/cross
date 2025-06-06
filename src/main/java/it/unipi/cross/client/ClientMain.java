@@ -19,7 +19,7 @@ public class ClientMain {
 
    private static TcpClient tcpClient;
    private static UdpListener udpListener;
-   private static String username;
+   private static String username = "";
    private static volatile boolean running = true;
 
    public static void main(String[] args) {
@@ -43,9 +43,9 @@ public class ClientMain {
             Request logout = new Request();
             logout.setOperation("logout");
             try {
-               tcpClient.sendRequest(new Request());
+               tcpClient.sendRequest(logout);
             } catch (IOException e) {
-               System.err.println("[ClientMain] Server didn't close this socket");
+               Prompt.printError("[ClientMain] server didn't close this socket");
             }
          }
 
@@ -64,7 +64,7 @@ public class ClientMain {
       try {
          config.loadClient();
       } catch (IOException e) {
-         System.err.println("[ClientMain] " + e.getMessage());
+         Prompt.printError("[ClientMain] " + e.getMessage());
          System.exit(1);
       }
 
@@ -72,8 +72,6 @@ public class ClientMain {
       int udpPort = config.getInt("udp.port");
       String tcpAddress = config.getString("tcp.address");
       int tcpPort = config.getInt("tcp.port");
-
-      username = "";
 
       // create and start UDP listener
       udpListener = new UdpListener(udpAddress, udpPort);
@@ -86,7 +84,7 @@ public class ClientMain {
       try{
          tcpClient.connect();
       } catch (IOException e) {
-         System.err.println("[ClientMain] Error during TCP connection");
+         Prompt.printError("[ClientMain] error during TCP connection");
          System.exit(1);
       }
 
@@ -110,20 +108,10 @@ public class ClientMain {
             }
             switch (command) {
                case "register":
-                  if (!username.isEmpty()) {
-                     System.out.println("user currently logged in");
-                     continue;
-                  }
-                  break;
                case "insertLimitOrder":
                case "insertMarketOrder":
                case "insertStopOrder":
                case "cancelOrder":
-                  if (username.isEmpty()) {
-                     System.out.println("user not logged in");
-                     continue;
-                  }
-                  break;
                case "updateCredentials":
                case "login":
                case "logout":
@@ -163,19 +151,10 @@ public class ClientMain {
                   default:
                }
 
-               System.out.println("ciao1");
                Response response = tcpClient.sendRequest(request);
                
                if (operation.equals("exit"))
                   System.exit(0);
-
-               if (response == null) {
-                  Prompt.printError("[ClientMain] Server closed the connection");
-                  running = false;
-                  continue;
-               }
-               // test
-               System.out.println(response.toString());
 
                if (response instanceof MessageResponse) {
                   MessageResponse messageResponse = (MessageResponse) response;
@@ -184,7 +163,7 @@ public class ClientMain {
                   String message = messageResponse.getErrorMessage();
                   switch (code) {
                      case 0:
-                        Prompt.printError("[ClientMain] Error on response received");
+                        Prompt.printError("[ClientMain] error on response received");
                         System.exit(1);
                      case 110:
                         System.out.println(message);
@@ -192,13 +171,12 @@ public class ClientMain {
                      case 100:
                         switch (operation) {
                            case "login":
-                              // to change after testing
                               if (username.isEmpty()) {
                                  if (values.get("username") != null) {
                                     username = values.get("username").toString();
                                  }
                               } else {
-                                 Prompt.printError(" User was already logged before login");
+                                 Prompt.printError("user was already logged before login");
                                  System.exit(1);
                               }
                               break;
@@ -207,12 +185,12 @@ public class ClientMain {
                                  username = "";
                                  System.exit(0);
                               } else {
-                                 Prompt.printError("User was not logged before logout");
+                                 Prompt.printError("user was not logged before logout");
                                  System.exit(1);
                               }
                         }
                      default:
-                        System.out.print(response.toString());
+                        System.out.println(response.toString());
                         break;
                   }
                } else if (response instanceof OrderResponse) {
@@ -221,13 +199,17 @@ public class ClientMain {
                   int orderId = orderResponse.getOrderId();
                   switch (orderId) {
                      case 0:
-                        Prompt.printError("[ClientMain] Error on response received");
+                        Prompt.printError("[ClientMain] error on response received");
                         System.exit(1);
                      case -1:
-                        System.out.println("order request failed or was discarded:\n" + response.toString());
+                        if (username.isEmpty()) {
+                           System.out.println("user not logged in:\n" + response.toString());
+                           break;
+                        }
+                        System.out.println("order failed or discarded:\n" + response.toString());
                         break;
                      default:
-                        System.out.println("order request placed correctly:\n" + response.toString());
+                        System.out.println("order placed correctly:\n" + response.toString());
                         break;
                   }
                }

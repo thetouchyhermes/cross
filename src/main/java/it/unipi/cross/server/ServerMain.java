@@ -1,6 +1,7 @@
 package it.unipi.cross.server;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -44,7 +45,7 @@ public class ServerMain {
          try {
             persistenceManager.loadAll(users, orders);
          } catch (IOException e) {
-            System.err.println("[ServerMain] Error while loading persistence files: " + e.getMessage());
+            System.err.println("[Server] error while loading persistence files: " + e.getMessage());
          }
          
          UserBook userBook = new UserBook(users);
@@ -59,18 +60,18 @@ public class ServerMain {
             try {
                persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList());
             } catch (IOException e) {
-               System.err.println("[ServerMain] Error persisting data: " + e.getMessage());
+               System.err.println("[Server] error persisting data: " + e.getMessage());
             }
          }), persistInterval, persistInterval, TimeUnit.SECONDS);
 
          // set up TCP server
          TcpServer tcpServer = new TcpServer(orderBook, userBook, tcpPort, tcpTimeout);
 
-         System.out.println("[Server] Started on TCP port " + tcpPort + ", UDP port " + udpPort);
+         System.out.println("[Server] started on TCP port " + tcpPort + ", UDP port " + udpPort);
 
          // Handler function for normal termination, exception and anomalous interruption
          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("\n[Server] Shutting down...");
+            System.out.println("[Server] shutting down...");
             try {
                if (tcpServer != null)
                   tcpServer.stop();
@@ -79,15 +80,18 @@ public class ServerMain {
                
                persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList());
             } catch (Exception e) {
-               System.err.println("[ServerMain] Error during shutdown: " + e.getMessage());
+               System.err.println("[ServerMain] error during shutdown: " + e.getMessage());
             }
-            System.out.println("\n[Server] Server stopped");
+            System.out.println("[Server] stopped");
          }));
 
          // start TCP server
          tcpServer.start();
+      } catch (BindException e) {
+         System.err.println("[Server] port is already in use");
+         System.exit(1);
       } catch (Exception e) {
-         System.err.println("[ServerMain] Something failed: " + e.getMessage());
+         System.err.println("[ServerMain] something failed: " + e.getMessage());
          e.printStackTrace();
       }
    }
