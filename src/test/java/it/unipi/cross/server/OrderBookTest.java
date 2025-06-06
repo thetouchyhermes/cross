@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,7 +48,7 @@ class DummyStopOrder extends StopOrder {
    private int orderId = -1;
 
    public DummyStopOrder(Type type, int price, int size, long timestamp, String username) {
-      super(username, type, price, size, System.currentTimeMillis());
+      super(username, type, price, size, Instant.now().getEpochSecond());
       this.type = type;
       this.price = price;
       this.size = size;
@@ -105,7 +106,7 @@ class DummyLimitOrder extends LimitOrder {
    private int orderId = -1;
 
    public DummyLimitOrder(Type type, int price, int size, long timestamp, String username) {
-      super(username, type, price, size, System.currentTimeMillis());
+      super(username, type, price, size, Instant.now().getEpochSecond());
       this.type = type;
       this.price = price;
       this.size = size;
@@ -161,7 +162,7 @@ class DummyMarketOrder extends MarketOrder {
    private int orderId = -1;
 
    public DummyMarketOrder(Type type, int size, String username) {
-      super(username, type, size, System.currentTimeMillis());
+      super(username, type, size, Instant.now().getEpochSecond());
       this.type = type;
       this.size = size;
       this.username = username;
@@ -208,10 +209,10 @@ public class OrderBookTest {
    @Test
    void testInsertMarketOrderWithMatchingLimitOrderSucceeds() {
       // Add an ask limit order to the book
-      LimitOrder ask = new LimitOrder("seller", Type.ask, 10, 100, System.currentTimeMillis());
+      LimitOrder ask = new LimitOrder("seller", Type.ask, 10, 100, Instant.now().getEpochSecond());
       OrderBook book = new OrderBook(null);
       int limitId = book.insertOrder(ask);
-      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 5, System.currentTimeMillis());
+      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 5, Instant.now().getEpochSecond());
 
       int marketId = book.insertOrder(bidMarket);
 
@@ -223,7 +224,7 @@ public class OrderBookTest {
    void testInsertMarketOrderWithNoMatchingLimitOrderFails() {
       // No ask orders in the book
       OrderBook book = new OrderBook(Collections.emptyList());
-      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 5, System.currentTimeMillis());
+      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 5, Instant.now().getEpochSecond());
 
       int orderId = book.insertOrder(bidMarket);
 
@@ -233,7 +234,7 @@ public class OrderBookTest {
    @Test
    void testInsertMarketOrderWithZeroSizeFails() {
       OrderBook book = new OrderBook(Collections.emptyList());
-      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 0, System.currentTimeMillis());
+      MarketOrder bidMarket = new MarketOrder("buyer", Type.bid, 0, Instant.now().getEpochSecond());
 
       int orderId = book.insertOrder(bidMarket);
 
@@ -243,7 +244,7 @@ public class OrderBookTest {
    @Test
    void testMarketOrderNotAddedToOrderMapIfNotMatched() {
       OrderBook book = new OrderBook(Collections.emptyList());
-      MarketOrder askMarket = new MarketOrder("seller", Type.ask, 3, System.currentTimeMillis());
+      MarketOrder askMarket = new MarketOrder("seller", Type.ask, 3, Instant.now().getEpochSecond());
 
       int orderId = book.insertOrder(askMarket);
 
@@ -254,10 +255,10 @@ public class OrderBookTest {
    @Test
    void testMarketOrderNotAddedToOrderMapIfMatched() {
       // Add a bid limit order to the book
-      LimitOrder bid = new LimitOrder("buyer", Type.bid, 10, 100, System.currentTimeMillis());
+      LimitOrder bid = new LimitOrder("buyer", Type.bid, 10, 100, Instant.now().getEpochSecond());
       OrderBook book = new OrderBook(null);
       int limitId = book.insertOrder(bid);
-      MarketOrder ask = new MarketOrder("seller", Type.ask, 5, System.currentTimeMillis());
+      MarketOrder ask = new MarketOrder("seller", Type.ask, 5, Instant.now().getEpochSecond());
 
       int marketId = book.insertOrder(ask);
       assertEquals(marketId, limitId + 1, "Market order should have the following id of the limit order");
@@ -271,10 +272,10 @@ public class OrderBookTest {
 
    @Test
    void testOrderListStart() {
-      LimitOrder bid1 = new LimitOrder(1, "buyer", Type.bid, 10, 80, System.currentTimeMillis());
-      LimitOrder bid2 = new LimitOrder(3, "alice", Type.bid, 7, 90, System.currentTimeMillis());
-      LimitOrder ask1 = new LimitOrder(14, "cesar", Type.ask, 5, 100, System.currentTimeMillis());
-      LimitOrder ask2 = new LimitOrder(5, "alice", Type.ask, 4, 93, System.currentTimeMillis());
+      LimitOrder bid1 = new LimitOrder(1, "buyer", Type.bid, 10, 80, Instant.now().getEpochSecond());
+      LimitOrder bid2 = new LimitOrder(3, "alice", Type.bid, 7, 90, Instant.now().getEpochSecond());
+      LimitOrder ask1 = new LimitOrder(14, "cesar", Type.ask, 5, 100, Instant.now().getEpochSecond());
+      LimitOrder ask2 = new LimitOrder(5, "alice", Type.ask, 4, 93, Instant.now().getEpochSecond());
 
       List<Order> orders = new ArrayList<>();
       orders.add(bid1);
@@ -283,8 +284,8 @@ public class OrderBookTest {
       orders.add(ask2);
 
       OrderBook book = new OrderBook(orders);
-      MarketOrder askMarket = new MarketOrder("alice", Type.ask, 7, System.currentTimeMillis());
-      MarketOrder bidMarket = new MarketOrder("seller", Type.bid, 8, System.currentTimeMillis());
+      MarketOrder askMarket = new MarketOrder("alice", Type.ask, 7, Instant.now().getEpochSecond());
+      MarketOrder bidMarket = new MarketOrder("seller", Type.bid, 8, Instant.now().getEpochSecond());
 
       int marketId1 = book.insertOrder(askMarket);
       int marketId2 = book.insertOrder(bidMarket);
@@ -313,13 +314,13 @@ public class OrderBookTest {
 
    @Test
    void testOrderListStartSingleton() {
-      LimitOrder bid1 = new LimitOrder(3, "buyer", Type.bid, 10, 80, System.currentTimeMillis());
+      LimitOrder bid1 = new LimitOrder(3, "buyer", Type.bid, 10, 80, Instant.now().getEpochSecond());
 
       List<Order> orders = Collections.singletonList(bid1);
 
       OrderBook book = new OrderBook(orders);
-      MarketOrder askMarket = new MarketOrder("alice", Type.ask, 11, System.currentTimeMillis());
-      MarketOrder bidMarket = new MarketOrder("seller", Type.bid, 7, System.currentTimeMillis());
+      MarketOrder askMarket = new MarketOrder("alice", Type.ask, 11, Instant.now().getEpochSecond());
+      MarketOrder bidMarket = new MarketOrder("seller", Type.bid, 7, Instant.now().getEpochSecond());
 
       int marketId1 = book.insertOrder(askMarket);
       int marketId2 = book.insertOrder(bidMarket);
@@ -336,7 +337,7 @@ public class OrderBookTest {
    @Test
    void testInsertStopOrderIsAddedToOrderMap() {
       OrderBook book = new OrderBook(Collections.emptyList());
-      StopOrder stop = new StopOrder("user", Type.bid, 10, 5, System.currentTimeMillis());
+      StopOrder stop = new StopOrder("user", Type.bid, 10, 5, Instant.now().getEpochSecond());
       int stopId = book.insertOrder(stop);
 
       assertTrue(stopId > 0, "Stop order should be assigned a valid orderId");
@@ -346,7 +347,7 @@ public class OrderBookTest {
    @Test
    void testInsertStopOrderWithZeroSizeFails() {
       OrderBook book = new OrderBook(Collections.emptyList());
-      StopOrder stop = new StopOrder("user", Type.ask, 0, 10, System.currentTimeMillis());
+      StopOrder stop = new StopOrder("user", Type.ask, 0, 10, Instant.now().getEpochSecond());
       int stopId = book.insertOrder(stop);
 
       assertEquals(-1, stopId, "Stop order with zero size should fail");
@@ -359,7 +360,7 @@ public class OrderBookTest {
       // We'll use a dummy stop order and temporarily override the matching algorithm.
 
       OrderBook book = new OrderBook(Collections.emptyList());
-      StopOrder stop = new StopOrder("user", Type.bid, 5, 10, System.currentTimeMillis()) {
+      StopOrder stop = new StopOrder("user", Type.bid, 5, 10, Instant.now().getEpochSecond()) {
          @Override
          public int getOrderId() {
             return super.getOrderId();
@@ -382,7 +383,7 @@ public class OrderBookTest {
    @Test
    void testStopOrderNotAddedToBidOrAskBook() {
       OrderBook book = new OrderBook(Collections.emptyList());
-      StopOrder stop = new StopOrder("user", Type.ask, 5, 10, System.currentTimeMillis());
+      StopOrder stop = new StopOrder("user", Type.ask, 5, 10, Instant.now().getEpochSecond());
       int stopId = book.insertOrder(stop);
 
       assertTrue(book.getOrderMap().containsKey(stopId), "Stop order should be in orderMap");
@@ -395,19 +396,19 @@ public class OrderBookTest {
       OrderBook book = new OrderBook(Collections.emptyList());
 
       // 1. Insert an ask limit order
-      LimitOrder ask = new LimitOrder("seller", Type.ask, 10, 150, System.currentTimeMillis());
+      LimitOrder ask = new LimitOrder("seller", Type.ask, 10, 150, Instant.now().getEpochSecond());
       int askId = book.insertOrder(ask);
 
       // 2. Insert a new ask limit order at price 200
-      LimitOrder askTrigger = new LimitOrder("trigger", Type.ask, 7, 200, System.currentTimeMillis());
+      LimitOrder askTrigger = new LimitOrder("trigger", Type.ask, 7, 200, Instant.now().getEpochSecond());
       int askTriggerId = book.insertOrder(askTrigger);
 
       // 3. Insert a stop order (bid stop at price 160, not triggered yet)
-      StopOrder stop = new StopOrder("stopper", Type.bid, 5, 160, System.currentTimeMillis());
+      StopOrder stop = new StopOrder("stopper", Type.bid, 5, 160, Instant.now().getEpochSecond());
       int stopId = book.insertOrder(stop);
 
       // 4. Insert a bid limit order (will delete the cheapest ask limit order and trigger the stop order)
-      LimitOrder bid = new LimitOrder("buyer", Type.bid, 15, 155, System.currentTimeMillis());
+      LimitOrder bid = new LimitOrder("buyer", Type.bid, 15, 155, Instant.now().getEpochSecond());
       int bidId = book.insertOrder(bid);
 
       // Print the resulting order book
