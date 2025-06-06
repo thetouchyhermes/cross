@@ -71,14 +71,15 @@ public class TcpClient implements Closeable {
                line = in.readLine();
 
                Response response = stringToResponse(line);
-               if (response != null && response instanceof MessageResponse) {
+               /**
+                * if (response != null && response instanceof MessageResponse) {
                   MessageResponse msg = (MessageResponse) response;
                   if (msg.getResponse() == 500) {
                      serverRunning = false;
                      System.out.println("[Client " + socket.getLocalPort() + "] server closed the connection");
                      System.exit(1);
                   }
-               }
+               } */
                if (line == null) {
                   System.out.println("[Client " + socket.getLocalPort() + "] disconnected from server");
                   System.exit(1);

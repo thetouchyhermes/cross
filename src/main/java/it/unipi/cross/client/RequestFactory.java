@@ -80,13 +80,8 @@ public class RequestFactory {
                   break;
                }
 
-               try {
-                  size = Integer.parseInt(paramList.get(1));
-                  price = Integer.parseInt(paramList.get(2));
-               } catch (NumberFormatException e) {
-                  request.setOperation("invalidArgs");
-                  break;
-               }
+               size = Integer.parseInt(paramList.get(1));
+               price = Integer.parseInt(paramList.get(2));
                type = paramList.get(0).toLowerCase();
                if (!type.equals("ask") && !type.equals("bid") || size < 0 || price < 0) {
                   request.setOperation("invalidArgs");
@@ -103,12 +98,7 @@ public class RequestFactory {
                   break;
                }
 
-               try {
-                  size = Integer.parseInt(paramList.get(1));
-               } catch (NumberFormatException e) {
-                  request.setOperation("invalidArgs");
-                  break;
-               }
+               size = Integer.parseInt(paramList.get(1));
                type = paramList.get(0).toLowerCase();
                if (!type.equals("ask") && !type.equals("bid") || size < 0) {
                   request.setOperation("invalidArgs");
@@ -124,12 +114,7 @@ public class RequestFactory {
                   break;
                }
 
-               try {
-                  orderId = Integer.parseInt(paramList.get(0));
-               } catch (NumberFormatException e) {
-                  request.setOperation("invalidArgs");
-                  break;
-               }
+               orderId = Integer.parseInt(paramList.get(0));
                if (orderId <= 0) {
                   request.setOperation("invalidArgs");
                   break;
@@ -143,12 +128,7 @@ public class RequestFactory {
                   break;
                }
 
-               try {
-                  month = Integer.parseInt(paramList.get(0));
-               } catch (NumberFormatException e) {
-                  request.setOperation("invalidArgs");
-                  break;
-               }
+               month = Integer.parseInt(paramList.get(0));
                if (month < 10000) {
                   request.setOperation("invalidArgs");
                   break;
@@ -174,7 +154,8 @@ public class RequestFactory {
             default:
                request.setOperation("notDefined");
          }
-
+      } catch (NumberFormatException e) {
+         request.setOperation("invalidArgs");
       } catch (IllegalArgumentException e) {
          request.setOperation("notDefined");
       }
