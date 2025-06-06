@@ -38,14 +38,11 @@ public class ClientMain {
             logout.setOperation("logout");
             try {
                tcpClient.sendRequest(logout);
-               System.out.println("hello?");
             } catch (IOException e) {
-               Prompt.printError("[ClientMain] server didn't close this socket");
+               // Server connection lost, ignore
             }
 
-            System.out.println("hello2");
             tcpClient.close();
-            System.out.println("hello3");
          }
 
          if (udpListener != null) {

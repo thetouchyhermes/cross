@@ -16,7 +16,8 @@ public class RequestFactory {
       int parIdx2 = line.lastIndexOf(')');
 
       String command = line.substring(0, parIdx1).trim();
-      String[] params = line.substring(parIdx1 + 1, parIdx2).split(",");
+      String paramString = line.substring(parIdx1 + 1, parIdx2);
+      String[] params = paramString.isEmpty() ? new String[0] : paramString.split(",");
 
       List<String> paramList = new ArrayList<>(Arrays.asList(params));
       paramList.replaceAll(str -> str.trim());
@@ -30,10 +31,12 @@ public class RequestFactory {
       request.setValues(values);
 
       boolean emptyParam = false;
-      for (String str : paramList) {
-         if (str.isBlank()) {
-            emptyParam = true;
-            break;
+      if (!paramString.isEmpty()) {
+         for (String str : paramList) {
+            if (str.isBlank()) {
+               emptyParam = true;
+               break;
+            }
          }
       }
       if (emptyParam) {
@@ -167,7 +170,7 @@ public class RequestFactory {
                break;
             case "logout":
             case "exit":
-               if (paramList.size() != 1 || !paramList.get(0).isEmpty()) {
+               if (!paramString.isEmpty() && (paramList.size() != 1 || !paramList.get(0).isEmpty())) {
                   request.setOperation("notDefined");
                }
                break;

@@ -77,8 +77,7 @@ public abstract class Order {
    }
 
    public void setSize(int size) {
-      if (size <= this.size)
-         this.size = size;
+      this.size = size;
    }
 
    public int getOriginalSize() {

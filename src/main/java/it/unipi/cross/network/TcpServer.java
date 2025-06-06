@@ -55,7 +55,7 @@ public class TcpServer {
                }
 
                TcpWorker worker = new TcpWorker(socket, orderBook, userBook);
-               threadPool.submit(worker, activeSockets);
+               threadPool.submit(worker);
             } catch (IOException e) {
                if (running)
                   throw e;

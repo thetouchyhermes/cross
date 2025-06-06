@@ -15,7 +15,7 @@ import com.google.gson.GsonBuilder;
  */
 public class JsonUtil {
 
-   private static final Gson gson = new GsonBuilder().create();
+   private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
    /**
     * Converts the given object to its JSON string representation.

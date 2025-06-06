@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Map;
 
 import it.unipi.cross.data.LimitOrder;
@@ -14,6 +15,7 @@ import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
 import it.unipi.cross.history.PriceHistory;
+import it.unipi.cross.history.PriceHistoryCalculator;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
@@ -229,8 +231,8 @@ public class TcpWorker implements Runnable {
             }
             break;
          case "getPriceHistory":
-            PriceHistory history = new PriceHistory();
-            history.getPriceHistory(values.get("month").toString());
+            PriceHistoryCalculator history = new PriceHistoryCalculator();
+            List<PriceHistory> prices = history.getPriceHistory(values.get("month").toString());
             break;
          case "exit":
             if (!username.isEmpty()) {

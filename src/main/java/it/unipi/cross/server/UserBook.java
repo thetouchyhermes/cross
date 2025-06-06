@@ -57,6 +57,9 @@ public class UserBook {
    public synchronized MessageResponse logout(String username) {
       // username must be already cleared from null or isEmpty cases
       User user = userMap.get(username);
+      if (user == null) {
+         return new MessageResponse(101, "non existent username");
+      }
 
       user.logout();
       return new MessageResponse(100, "OK");
