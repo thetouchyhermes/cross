@@ -1,31 +1,3 @@
 {
-  "orders": [
-    {
-      "orderId": 1,
-      "username": "ere",
-      "type": "ask",
-      "orderType": "limit",
-      "size": 3,
-      "price": 200,
-      "timestamp": 1749243179
-    },
-    {
-      "orderId": 4,
-      "username": "ere",
-      "type": "bid",
-      "orderType": "limit",
-      "size": 10,
-      "price": 190,
-      "timestamp": 1749243184
-    },
-    {
-      "orderId": 5,
-      "username": "ere",
-      "type": "ask",
-      "orderType": "limit",
-      "size": 3,
-      "price": 200,
-      "timestamp": 1749243186
-    }
-  ]
+  "orders": []
 }
