@@ -81,11 +81,11 @@ public class ServerMain {
             } catch (Exception e) {
                System.err.println("[ServerMain] Error during shutdown: " + e.getMessage());
             }
+            System.out.println("\n[Server] Server stopped");
          }));
 
          // start TCP server
          tcpServer.start();
-
       } catch (Exception e) {
          System.err.println("[ServerMain] Something failed: " + e.getMessage());
          e.printStackTrace();

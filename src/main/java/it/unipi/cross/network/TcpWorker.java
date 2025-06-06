@@ -7,14 +7,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.List;
 import java.util.Map;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
-import it.unipi.cross.data.User;
+import it.unipi.cross.history.PriceHistory;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
@@ -40,12 +39,12 @@ public class TcpWorker implements Runnable {
    public void run() {
 
       // edit
-      System.out.println("[TcpWorker] Connected client " + socket);
-      
+      System.out.println("[TcpWorker] Connected client at port " + socket.getPort());
+      String line = null;
+
       try (
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
-         String line;
          while (!Thread.currentThread().isInterrupted() && (line = in.readLine()) != null) {
             Request request = JsonUtil.fromJson(line, Request.class);
             Response response = processRequest(request);
@@ -55,14 +54,20 @@ public class TcpWorker implements Runnable {
                out.flush();
             }
          }
+         Response error = new MessageResponse(500, "internal server error");
+         out.write(JsonUtil.toJson(error));
+         out.newLine();
+         out.flush();
+
       } catch (SocketTimeoutException e) {
-         System.err.println("[TcpWorker] Client disconnected: " + e.getMessage());
+         System.err.println("[TcpWorker] Timed out idle client at port " + socket.getPort());
       } catch (IOException e) {
-         System.err.println("[TcpWorker] " + e.getMessage());
+         System.err.println("[TcpWorker] Disconnected client at port " + socket.getPort());
       }
+
    }
 
-   private Response processRequest(Request request) {
+   private Response processRequest(Request request) throws IOException {
       if (request == null)
          return null;
 
@@ -73,13 +78,6 @@ public class TcpWorker implements Runnable {
       Map<String, String> values = JsonUtil.convertObjectToStringMap(request.getValues());
 
       Response response = null;
-
-      List<User> users = userBook.getUserList();
-      if ((users == null || users.isEmpty()) && !operation.equals("register") && !operation.equals("getPriceHistory")) {
-         System.out.println(
-                     "[TcpWorker] Received request: " + request.toString() + "\nSent response: " + response.toString());
-         return new MessageResponse(110, "no users are registered yet");
-      }
 
       switch (operation) {
          case "register":
@@ -155,13 +153,15 @@ public class TcpWorker implements Runnable {
                   Integer.parseInt(values.get("orderId")),
                   username);
             break;
-         /**
-          * case "getPriceHistory":
-          * PriceHistory history = new PriceHistory();
-          * history.getPriceHistory(values.get("month"));
-          **/
+         case "getPriceHistory":
+            PriceHistory history = new PriceHistory();
+            // history.getPriceHistory(values.get("month"));
+            break;
+         case "exit":
+            socket.close();
       }
 
+      // test
       System.out
             .println("[TcpWorker] Received request: " + request.toString() + "\nSent response: " + response.toString());
 

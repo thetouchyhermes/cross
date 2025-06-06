@@ -35,10 +35,20 @@ public class ClientMain {
 
          running = false;
 
-         // close all connections
-         if (tcpClient != null && tcpClient.isAlive()) {
+         if (!tcpClient.isServerAlive()) {
             tcpClient.close();
          }
+         
+         if (tcpClient != null && tcpClient.isAlive()) {
+            Request logout = new Request();
+            logout.setOperation("logout");
+            try {
+               tcpClient.sendRequest(new Request());
+            } catch (IOException e) {
+               System.err.println("[ClientMain] Server didn't close this socket");
+            }
+         }
+
          if (udpListener != null) {
             udpListener.shutdown();
          }
@@ -62,7 +72,6 @@ public class ClientMain {
       int udpPort = config.getInt("udp.port");
       String tcpAddress = config.getString("tcp.address");
       int tcpPort = config.getInt("tcp.port");
-      int tcpTimeout = config.getInt("tcp.timeout");
 
       username = "";
 
@@ -72,7 +81,7 @@ public class ClientMain {
       udpThread.start();
 
       // Create and start TCP connection
-      tcpClient = new TcpClient(tcpAddress, tcpPort, tcpTimeout);
+      tcpClient = new TcpClient(tcpAddress, tcpPort);
 
       try{
          tcpClient.connect();
@@ -151,14 +160,15 @@ public class ClientMain {
                      if (com != null)
                         Prompt.printHelp(com);
                      continue;
-                  case "exit":
-                     System.exit(0);
                   default:
                }
 
                System.out.println("ciao1");
                Response response = tcpClient.sendRequest(request);
                
+               if (operation.equals("exit"))
+                  System.exit(0);
+
                if (response == null) {
                   Prompt.printError("[ClientMain] Server closed the connection");
                   running = false;

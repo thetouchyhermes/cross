@@ -74,6 +74,7 @@ public class TcpServer {
          if (serverSocket != null && !serverSocket.isClosed()) {
             serverSocket.close();
          }
+         threadPool.shutdownNow();
          synchronized (activeSockets) {
             for (Socket s : activeSockets) {
                System.out.println("closing " + s);

@@ -8,7 +8,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketTimeoutException;
 
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
@@ -20,92 +19,93 @@ public class TcpClient implements Closeable {
    private final String serverAddress;
    private final int serverPort;
    private Socket socket;
-
-   private final int timeout;
-
    private BufferedReader in;
    private BufferedWriter out;
 
-   public TcpClient(String serverAddress, int serverPort, int timeout) {
-      this.serverAddress = serverAddress;
-      this.serverPort = serverPort;
-      this.timeout = timeout;
-   }
+   private Thread receiverThread;
+   private Response receivedResponse;
+   private final Object obj = new Object();
+   private volatile boolean serverRunning = false;
+   private volatile boolean running = false;
 
    public TcpClient(String serverAddress, int serverPort) {
-      this(serverAddress, serverPort, 5000);
+      this.serverAddress = serverAddress;
+      this.serverPort = serverPort;
    }
 
    /**
     * Establishes a TCP connection to the server using the specified address and
     * port.
-    * <p>
-    * If the client is already connected (socket is alive), this method returns
-    * immediately.
-    * Otherwise, it connects to the server.
-    * </p>
-    * <p>
-    * If the socket is not alive after attempting the application exits.
-    * </p>
-    *
+    * If already connected, returns immediately.
+    * 
     * @throws IOException if an I/O error occurs when creating the socket or
-    *                     streams,
-    *                     or if the connection attempt fails.
+    *                     streams.
     */
    public void connect() throws IOException {
-      if (isAlive()) {
+      if (isAlive())
          return;
-      }
 
       socket = new Socket();
       socket.connect(new InetSocketAddress(serverAddress, serverPort));
-      socket.setSoTimeout(timeout);
-
       out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
       in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
       if (!isAlive()) {
-         System.err.println("[TcpClient] Socket not alive at start");
-         System.exit(1);
+         close();
+         throw new IOException("Socket not alive at start");
       }
-      System.out.println("[TcpClient] Connected to server with socket " + socket);
+
+      serverRunning = true;
+      running = true;
+      startReceiverThread();
+
+      System.out.println("[TcpClient] Connected to server with " + socket);
    }
 
-   /**
-    * Sends a request to the server and waits for a response
-    *
-    * @param request the {@link Request} object to send to the server
-    * @return a {@link Response} or {@code null} if the client is not alive or the
-    *         response cannot be parsed
-    * @throws IOException if an I/O error occurs or if the server response times
-    *                     out
-    */
-   public Response sendRequest(Request request) throws IOException {
-      if (!isAlive())
-         return null;
+   private void startReceiverThread() {
+      receiverThread = new Thread(() -> {
+         try {
+            String line;
+            while (running && !Thread.currentThread().isInterrupted()) {
+               line = in.readLine();
 
-      out.write(JsonUtil.toJson(request));
-      out.newLine();
-      out.flush();
+               if (line == null)  {
+                  System.out.println("[TcpClient] Server closed the connection");
+                  serverRunning = false;
+                  receivedResponse = null;
+                  close();
+                  break;
+               }
+               Response response = stringToResponse(line);
+               if (response != null && response instanceof MessageResponse) {
+                  MessageResponse msg = (MessageResponse) response;
+                  if (msg.getResponse() == 500) {
+                     System.out.println("[TcpClient] Server disconnected from socket");
+                     serverRunning = false;
+                     receivedResponse = null;
+                     close();
+                     break;
+                  }
+               }
+               System.out.println("[TcpClient] Received response: " + response);
 
-      if (request.getOperation() == null) {
-         return null;
-      }
-      
-      // wait for a single non-null line response
-      String line;
-      try {
-         while (true) {
-            line = in.readLine();
-            // !!!!!! always null with logout
-            if (line != null)
-               break;
-            else if (!isAlive())
-               return null;
-         }  
-      } catch (SocketTimeoutException e) {
-         throw new IOException("[TcpClient] Timed out waiting for server response: " + e.getMessage(), e);
-      }
+               synchronized (obj) {
+                  receivedResponse = response;
+                  obj.notifyAll();
+               }
+            }
+         } catch (IOException e) {
+            if (running) {
+               System.err.println("[TcpClient] Receiver thread error: " + e.getMessage());
+            }
+            close();
+         }
+      });
+
+      receiverThread.start();
+   }
+
+   private Response stringToResponse(String line) {
 
       // try to convert to a MessageResponse
       MessageResponse messageResponse = JsonUtil.fromJson(line, MessageResponse.class);
@@ -115,15 +115,56 @@ public class TcpClient implements Closeable {
 
       // fallback to OrderResponse
       OrderResponse orderResponse = JsonUtil.fromJson(line, OrderResponse.class);
-      if (orderResponse != null && orderResponse.getOrderId() == 0) {
+      if (orderResponse != null && orderResponse.getOrderId() != 0) {
          return orderResponse;
       }
 
       return null;
    }
 
+   /**
+    * Sends a request to the server and waits for a response.
+    * 
+    * @param request the {@link Request} object to send to the server
+    * @return a {@link Response} or {@code null} if the client is not alive or the
+    *         response cannot be parsed
+    * @throws IOException if an I/O error occurs
+    */
+   public Response sendRequest(Request request) throws IOException {
+      if (!isAlive())
+         return null;
+      if (request == null || request.getOperation() == null)
+         return null;
+
+      synchronized (obj) {
+         receivedResponse = null;
+         out.write(JsonUtil.toJson(request));
+         out.newLine();
+         out.flush();
+
+         // Wait for response with timeout (optional: adjust as needed)
+         while (receivedResponse == null && isAlive()) {
+            try {
+               obj.wait();
+            } catch (InterruptedException e) {
+               Thread.currentThread().interrupt();
+               throw new IOException("Interrupted while waiting for response", e);
+            }
+         }
+         return receivedResponse;
+      }
+   }
+
    @Override
    public void close() {
+      running = false;
+      if (receiverThread != null) {
+         receiverThread.interrupt();
+         try {
+            receiverThread.join();
+         } catch (InterruptedException ignored) {
+         }
+      }
       try {
          if (in != null)
             in.close();
@@ -146,24 +187,24 @@ public class TcpClient implements Closeable {
 
    /**
     * Checks if the underlying socket is alive.
-    * <p>
-    * This method returns {@code true} if the socket is not {@code null},
-    * is connected, and has not been closed. Otherwise, it returns {@code false}.
-    *
+    * 
     * @return {@code true} if the socket is alive; {@code false} otherwise.
     */
    public boolean isAlive() {
       return socket != null && socket.isConnected() && !socket.isClosed();
    }
 
+   public boolean isServerAlive() {
+      return serverRunning;
+   }
+
    /**
     * Sends an empty request to the server to keep the connection alive and reset
     * the server's timeout.
-    *
+    * 
     * @throws IOException if an I/O error occurs while sending the request.
     */
    public void keepServerAlive() throws IOException {
-      // send an empty message to server to make timeout reset
       sendRequest(new Request());
    }
 }
