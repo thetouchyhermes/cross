@@ -152,8 +152,8 @@ public class ClientMain {
                }
 
                tcpClient.sendRequest(request);
-               
-               
+               Response response = tcpClient.receiveResponse();
+
                if (operation.equals("exit"))
                   System.exit(0);
 

@@ -27,6 +27,7 @@ public class TcpClient implements Closeable {
    private final Object obj = new Object();
    private volatile boolean serverRunning = false;
    private volatile boolean running = false;
+   private volatile boolean readyResponse = false;
 
    public TcpClient(String serverAddress, int serverPort) {
       this.serverAddress = serverAddress;
@@ -75,8 +76,9 @@ public class TcpClient implements Closeable {
                   if (msg.getResponse() == 500) {
                      serverRunning = false;
                      System.out.println("[Client " + socket.getLocalPort() + "] server closed the connection");
-                     running = false;
                      receivedResponse = null;
+                     running = false;
+                     readyResponse = false;
                      System.exit(1);
                   }
                }
@@ -89,7 +91,7 @@ public class TcpClient implements Closeable {
 
                synchronized (obj) {
                   receivedResponse = response;
-                  obj.notifyAll();
+                  readyResponse = true;
                }
             }
          } catch (IOException e) {
@@ -122,6 +124,9 @@ public class TcpClient implements Closeable {
    }
 
    public void sendRequest(Request request) throws IOException {
+      while (readyResponse && isAlive()) {
+      }
+
       if (!isAlive())
          throw new IOException("Socket is not alive");
       if (request == null || request.getOperation() == null)
@@ -136,19 +141,18 @@ public class TcpClient implements Closeable {
    }
 
    public Response receiveResponse() throws IOException {
+      Response response = null;
       synchronized (obj) {
-         while (receivedResponse == null && isAlive()) {
-            try {
-               obj.wait();
-            } catch (InterruptedException e) {
-               Thread.currentThread().interrupt();
-               throw new IOException("Interrupted while waiting for response", e);
-            }
+         while (!readyResponse) {
          }
-         return receivedResponse;
+         if (running)
+            response = receivedResponse;
+
+         readyResponse = false;
       }
+      return response;
    }
-   
+
    @Override
    public void close() {
       running = false;
