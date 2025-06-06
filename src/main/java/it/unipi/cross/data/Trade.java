@@ -30,6 +30,30 @@ public class Trade {
       this.timestamp = Instant.now().getEpochSecond();
    }
 
+   public int getOrderId() {
+      return orderId;
+   }
+
+   public Type getType() {
+      return type;
+   }
+
+   public OrderType getOrderType() {
+      return orderType;
+   }
+
+   public int getSize() {
+      return size;
+   }
+
+   public int getPrice() {
+      return price;
+   }
+
+   public long getTimestamp() {
+      return timestamp;
+   }
+
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()

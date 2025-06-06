@@ -19,6 +19,7 @@ public class ClientMain {
 
    private static TcpClient tcpClient;
    private static UdpListener udpListener;
+   private static boolean udpStarted = false;
    private static String username = "";
    private static volatile boolean running = true;
 
@@ -45,7 +46,7 @@ public class ClientMain {
             tcpClient.close();
          }
 
-         if (udpListener != null) {
+         if (udpStarted && udpListener != null) {
             udpListener.shutdown();
          }
 
@@ -69,11 +70,6 @@ public class ClientMain {
       String tcpAddress = config.getString("tcp.address");
       int tcpPort = config.getInt("tcp.port");
 
-      // create and start UDP listener
-      udpListener = new UdpListener(udpAddress, udpPort);
-      Thread udpThread = new Thread(udpListener);
-      udpThread.start();
-
       // Create and start TCP connection
       tcpClient = new TcpClient(tcpAddress, tcpPort);
 
@@ -87,6 +83,15 @@ public class ClientMain {
       try (Scanner scanner = new Scanner(System.in)) {
 
          while (running) {
+
+            if (!udpStarted && !username.isEmpty()) {
+               // create and start UDP listener
+               udpListener = new UdpListener(udpAddress, udpPort, username);
+               Thread udpThread = new Thread(udpListener);
+               udpThread.start();
+               udpStarted = true;
+            }
+
             Prompt.newLine(username);
             String line = "";
             line = scanner.nextLine();

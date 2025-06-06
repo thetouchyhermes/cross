@@ -18,7 +18,10 @@ import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
+import it.unipi.cross.data.UserTrade;
+import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
+import it.unipi.cross.json.Notification;
 import it.unipi.cross.json.Response;
 import it.unipi.cross.network.UdpNotifier;
 
@@ -210,6 +213,7 @@ public class OrderBook {
     *         otherwise.
     */
    public boolean checkBestPrices() {
+
       int newBestBid = bidBook.isEmpty() ? -1 : bidBook.first().getPrice();
       int newBestAsk = askBook.isEmpty() ? -1 : askBook.first().getPrice();
       boolean changed = false;
@@ -260,9 +264,10 @@ public class OrderBook {
       }
    }
 
-   public void notify(String message) {
+   public void notify(List<UserTrade> trades) {
+      Notification notification = new Notification(trades);
       try {
-         udpNotifier.notify(message);
+         udpNotifier.notify(JsonUtil.toJson(notification));
       } catch (IOException e) {
          System.err.println("[UdpNotifier] Error during notification");
       }

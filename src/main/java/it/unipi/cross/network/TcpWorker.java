@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
@@ -72,19 +71,21 @@ public class TcpWorker implements Runnable {
             userBook.logout(username);
             username = "";
          }
+         /*
          if (Thread.currentThread().isInterrupted()) {
             Response error = new MessageResponse(500, "internal server error");
             out.write(JsonUtil.toJson(error));
             out.newLine();
             out.flush();
          }
+            */
       } catch (SocketTimeoutException e) {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
          System.out.println("[Server] disconnected client " + socket.getPort());
       } catch (Exception e) {
-         // System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
-         e.printStackTrace();
+         System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
+         // e.printStackTrace();
       } finally {
          try {
             if (socket != null && !socket.isClosed()) {
@@ -105,9 +106,7 @@ public class TcpWorker implements Runnable {
       String operation = request.getOperation();
       if (operation == null || operation.isEmpty())
          return null;
-
-      Map<String, Object> values = request.getValues();
-
+         
       Response response = null;
 
       switch (operation) {
