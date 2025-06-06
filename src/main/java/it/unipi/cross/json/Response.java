@@ -1,4 +1,4 @@
-package it.unipi.cross.util;
+package it.unipi.cross.json;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

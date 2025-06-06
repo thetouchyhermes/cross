@@ -1,10 +1,10 @@
-package it.unipi.cross.util;
+package it.unipi.cross.json;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
@@ -68,7 +68,7 @@ public class JsonUtil {
    }
    
    public static Map<String, Object> convertStringToObjectMap(Map<String, String> map) {
-      Map<String, Object> oMap = new HashMap<>();
+      Map<String, Object> oMap = new LinkedHashMap<>();
       for (Map.Entry<String, String> entry : map.entrySet()) {
          oMap.put(entry.getKey(), entry.getValue());
       }
@@ -77,7 +77,7 @@ public class JsonUtil {
    }
 
    public static Map<String, String> convertObjectToStringMap (Map<String, Object> map) {
-      Map<String, String> sMap = new HashMap<>();
+      Map<String, String> sMap = new LinkedHashMap<>();
       for (Map.Entry<String, Object> entry : map.entrySet()) {
          sMap.put(entry.getKey(), entry.getValue().toString());
       }

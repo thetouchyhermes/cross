@@ -1,4 +1,4 @@
-package it.unipi.cross.util;
+package it.unipi.cross.json;
 
 public class OrderResponse extends Response{
    private int orderId;

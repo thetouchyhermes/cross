@@ -1,4 +1,4 @@
-package it.unipi.cross.util;
+package it.unipi.cross.json;
 
 import java.util.Map;
 
@@ -21,7 +21,7 @@ import com.google.gson.GsonBuilder;
  * <pre>
  * Request request = new Request();
  * request.setOperation("createUser");
- * Map&lt;String, Object&gt; params = new HashMap&lt;&gt;();
+ * Map&lt;String, Object&gt; params = new LinkedHashMap&lt;&gt;();
  * params.put("username", "john");
  * request.setValues(params);
  * </pre>

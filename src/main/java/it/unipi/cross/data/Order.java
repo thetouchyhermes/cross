@@ -29,7 +29,7 @@ import com.google.gson.GsonBuilder;
  */
 public abstract class Order {
 
-   protected int orderId = -1;
+   protected int orderId;
    protected final String username;
    protected final Type type;
    protected final OrderType orderType;
@@ -49,12 +49,7 @@ public abstract class Order {
    }
 
    public Order(String username, Type type, OrderType orderType, int size, int price, long timestamp) {
-      this.username = username;
-      this.type = type;
-      this.orderType = orderType;
-      this.size = this.originalSize = size;
-      this.price = price;
-      this.timestamp = timestamp;
+      this(-1, username, type, orderType, size, price, timestamp);
    }
 
    public int getOrderId() {

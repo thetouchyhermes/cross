@@ -1,4 +1,4 @@
-package it.unipi.cross.util;
+package it.unipi.cross.json;
 
 /**
  * Represents a response object containing a response code and an optional error
