@@ -6,19 +6,22 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Map;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
+import it.unipi.cross.data.User;
+import it.unipi.cross.json.JsonUtil;
+import it.unipi.cross.json.MessageResponse;
+import it.unipi.cross.json.OrderResponse;
+import it.unipi.cross.json.Request;
+import it.unipi.cross.json.Response;
 import it.unipi.cross.server.OrderBook;
 import it.unipi.cross.server.UserBook;
-import it.unipi.cross.util.JsonUtil;
-import it.unipi.cross.util.MessageResponse;
-import it.unipi.cross.util.OrderResponse;
-import it.unipi.cross.util.Request;
-import it.unipi.cross.util.Response;
 
 public class TcpWorker implements Runnable {
    private Socket socket;
@@ -38,36 +41,45 @@ public class TcpWorker implements Runnable {
 
       // edit
       System.out.println("[TcpWorker] Connected client " + socket);
-
+      
       try (
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
          String line;
-         while ((line = in.readLine()) != null) {
+         while (!Thread.currentThread().isInterrupted() && (line = in.readLine()) != null) {
             Request request = JsonUtil.fromJson(line, Request.class);
             Response response = processRequest(request);
-            out.write(JsonUtil.toJson(response));
-            out.newLine();
-            out.flush();
+            if (response != null) {
+               out.write(JsonUtil.toJson(response));
+               out.newLine();
+               out.flush();
+            }
          }
+      } catch (SocketTimeoutException e) {
+         System.err.println("[TcpWorker] Client disconnected: " + e.getMessage());
       } catch (IOException e) {
-         e.printStackTrace();
+         System.err.println("[TcpWorker] " + e.getMessage());
       }
    }
 
    private Response processRequest(Request request) {
-      // Dispatch to OrderBook, UserBook, etc.
-      // Return Response object as per util.Response
-      // ...
+      if (request == null)
+         return null;
 
       String operation = request.getOperation();
-      if (operation.isEmpty())
+      if (operation == null || operation.isEmpty())
          return null;
 
       Map<String, String> values = JsonUtil.convertObjectToStringMap(request.getValues());
 
       Response response = null;
-      int orderId = -2;
+
+      List<User> users = userBook.getUserList();
+      if ((users == null || users.isEmpty()) && !operation.equals("register") && !operation.equals("getPriceHistory")) {
+         System.out.println(
+                     "[TcpWorker] Received request: " + request.toString() + "\nSent response: " + response.toString());
+         return new MessageResponse(110, "no users are registered yet");
+      }
 
       switch (operation) {
          case "register":
@@ -91,7 +103,7 @@ public class TcpWorker implements Runnable {
                   values.get("new_password"));
             break;
          case "login":
-            if (username.isEmpty()) {
+            if (!username.isEmpty()) {
                response = new MessageResponse(102, "user already logged in");
                break;
             }
@@ -101,7 +113,7 @@ public class TcpWorker implements Runnable {
             username = values.get("username");
             break;
          case "logout":
-            if (!username.isEmpty()) {
+            if (username.isEmpty()) {
                response = new MessageResponse(101, "user not logged in");
                break;
             }
