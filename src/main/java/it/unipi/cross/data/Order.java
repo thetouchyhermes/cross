@@ -27,7 +27,7 @@ import com.google.gson.GsonBuilder;
  * ensuring consistent state for testing and order processing.
  * </p>
  */
-public abstract class Order {
+public class Order {
 
    protected int orderId;
    protected final String username;

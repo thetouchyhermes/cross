@@ -4,18 +4,34 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+
+import it.unipi.cross.data.Order;
 
 /**
  * Utility class for serializing and deserializing Java objects to and from JSON files using Gson.
  */
 public class JsonUtil {
 
-   private static final Gson gson = new GsonBuilder().create();
+   private static final String[] integerKeys = { "size", "price", "orderId" };
+   private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(
+                  new TypeToken<Map<String, Object>>() {
+                  }.getType(),
+                  new ConditionalMapTypeAdapter(integerKeys))
+            .create();
+   private static final Gson prettyGson = new GsonBuilder()
+            .registerTypeAdapter(
+                  new TypeToken<Map<String, Object>>() {
+                  }.getType(),
+                  new ConditionalMapTypeAdapter(integerKeys))
+            .registerTypeAdapter(Order.class, new OrderTypeAdapter())
+            .setPrettyPrinting()
+            .create();
 
    /**
     * Converts the given object to its JSON string representation.
@@ -50,7 +66,7 @@ public class JsonUtil {
     */
    public static <T> T readFromFile(File file, Class<T> clazz) throws IOException {
       try (FileReader reader = new FileReader(file)) {
-         return gson.fromJson(reader, clazz);
+         return prettyGson.fromJson(reader, clazz);
       }
    }
 
@@ -63,25 +79,8 @@ public class JsonUtil {
     */
    public static void writeToFile(File file, Object obj) throws IOException {
       try (FileWriter writer = new FileWriter(file)) {
-         gson.toJson(obj, writer);
+         prettyGson.toJson(obj, writer);
       }
    }
    
-   public static Map<String, Object> convertStringToObjectMap(Map<String, String> map) {
-      Map<String, Object> oMap = new LinkedHashMap<>();
-      for (Map.Entry<String, String> entry : map.entrySet()) {
-         oMap.put(entry.getKey(), entry.getValue());
-      }
-
-      return oMap;
-   }
-
-   public static Map<String, String> convertObjectToStringMap (Map<String, Object> map) {
-      Map<String, String> sMap = new LinkedHashMap<>();
-      for (Map.Entry<String, Object> entry : map.entrySet()) {
-         sMap.put(entry.getKey(), entry.getValue().toString());
-      }
-
-      return sMap;
-   }
 }

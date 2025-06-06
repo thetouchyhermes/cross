@@ -1,21 +1,40 @@
 package it.unipi.cross.data;
 
+import java.time.Instant;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class Trade {
-   public static String toString(Order order, int size, int price) {
-      OrderType orderType = order.getOrderType();
+   private int orderId;
+   private Type type;
+   private OrderType orderType;
+   private int size;
+   private int price;
+   private long timestamp;
+
+   public Trade(Order order, int size, int price) {
+      this.orderId = order.getOrderId();
+      this.type = order.getType();
+
+      this.orderType = order.getOrderType();
       if (orderType == OrderType.market) {
          MarketOrder market = (MarketOrder) order;
          if (market.isFromStopOrder()) {
-            orderType = OrderType.stop;
+            this.orderType = OrderType.stop;
          }
       }
 
-      return "{\"orderId\": " + order.getOrderId() +
-            ", \"type\": \"" + order.getType() +
-            "\", \"orderType\": \"" + orderType +
-            "\", \"size\": " + size +
-            ", \"price\": " + price +
-            ", \"timestamp\": " + System.currentTimeMillis() +
-            "}";
+      this.size = size;
+      this.price = price;
+      this.timestamp = Instant.now().getEpochSecond();
+   }
+
+   @Override
+   public String toString() {
+      Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
+      return gson.toJson(this);
    }
 }

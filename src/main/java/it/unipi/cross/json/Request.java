@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 /**
  * Represents a request containing an operation and associated values.
@@ -50,10 +51,37 @@ public class Request {
       this.values = values;
    }
 
+   public String getAsString(String key) {
+      Object value = values.get(key);
+      return (value != null) ? String.valueOf(value) : null;
+   }
+
+   public Integer getAsInteger(String key) {
+      Object value = values.get(key);
+      if (value == null)
+         return null;
+
+      if (value instanceof Integer) {
+         return (Integer) value;
+      } else if (value instanceof String) {
+         try {
+            return Integer.parseInt((String) value);
+         } catch (NumberFormatException e) {
+            return null;
+         }
+      }
+      return null;
+   }
+
    // for testing
    @Override
    public String toString() {
+      String[] integerKeys = { "size", "price", "orderId" };
       Gson gson = new GsonBuilder()
+            .registerTypeAdapter(
+                  new TypeToken<Map<String, Object>>() {
+                  }.getType(),
+                  new ConditionalMapTypeAdapter(integerKeys))
             .setPrettyPrinting()
             .create();
       return gson.toJson(this);
