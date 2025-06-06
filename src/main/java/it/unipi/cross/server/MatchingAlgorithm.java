@@ -9,7 +9,7 @@ import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
-import it.unipi.cross.data.UserTrade;
+import it.unipi.cross.data.Trade;
 
 public class MatchingAlgorithm {
 
@@ -74,9 +74,9 @@ public class MatchingAlgorithm {
             int tradePrice = bookOrder.getPrice();
 
             // notify trade for both orders on the tradeSize and tradePrice
-            List<UserTrade> trades = new LinkedList<>();
-            trades.add(new UserTrade(bookOrder, tradeSize, tradePrice));
-            trades.add(new UserTrade(market, tradeSize, tradePrice));
+            List<Trade> trades = new LinkedList<>();
+            trades.add(new Trade(bookOrder, tradeSize, tradePrice));
+            trades.add(new Trade(market, tradeSize, tradePrice));
             orderBook.notify(trades);
             
             market.setSize(market.getSize() - tradeSize);
@@ -143,9 +143,9 @@ public class MatchingAlgorithm {
          int tradePrice = bookOrder.getPrice();
 
          // notify trade for both orders on the tradeSize and tradePrice
-         List<UserTrade> trades = new LinkedList<>();
-         trades.add(new UserTrade(bookOrder, tradeSize, tradePrice));
-         trades.add(new UserTrade(limit, tradeSize, tradePrice));
+         List<Trade> trades = new LinkedList<>();
+         trades.add(new Trade(bookOrder, tradeSize, tradePrice));
+         trades.add(new Trade(limit, tradeSize, tradePrice));
          orderBook.notify(trades);
 
          bookOrder.setSize(bookOrder.getSize() - tradeSize);

@@ -8,7 +8,6 @@ import java.net.NetworkInterface;
 import java.net.SocketAddress;
 
 import it.unipi.cross.data.Trade;
-import it.unipi.cross.data.UserTrade;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.Notification;
 
@@ -48,14 +47,13 @@ public class UdpListener implements Runnable {
                if (notification == null)
                   continue;
                   
-               for (UserTrade ut : notification.getTrades()) {
+               for (Trade ut : notification.getTrades()) {
                   if (ut.getUsername().equals(username)) {
-                     Trade trade = (Trade)ut;
+                     Trade trade = JsonUtil.fromJson(JsonUtil.toJson(ut), Trade.class);
                      System.out.println("[NOTIFICATION]\n" + trade.toString());
                   }
                }
             }
-            System.out.println(message);
          }
 
          socket.leaveGroup(sockAddr, netIf);

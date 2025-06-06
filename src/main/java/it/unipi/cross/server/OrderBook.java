@@ -17,8 +17,8 @@ import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
+import it.unipi.cross.data.Trade;
 import it.unipi.cross.data.Type;
-import it.unipi.cross.data.UserTrade;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.Notification;
@@ -264,7 +264,7 @@ public class OrderBook {
       }
    }
 
-   public void notify(List<UserTrade> trades) {
+   public void notify(List<Trade> trades) {
       Notification notification = new Notification(trades);
       try {
          udpNotifier.notify(JsonUtil.toJson(notification));

@@ -6,13 +6,13 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import it.unipi.cross.data.UserTrade;
+import it.unipi.cross.data.Trade;
 
 public class Notification {
    private final String notification = "closedTrades";
-   private final List<UserTrade> trades;
+   private final List<Trade> trades;
 
-   public Notification(List<UserTrade> trades) {
+   public Notification(List<Trade> trades) {
       this.trades = new LinkedList<>(trades);
    }
 
@@ -20,7 +20,7 @@ public class Notification {
       return notification;
    }
 
-   public List<UserTrade> getTrades() {
+   public List<Trade> getTrades() {
       return trades;
    }
 

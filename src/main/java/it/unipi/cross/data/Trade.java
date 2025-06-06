@@ -12,6 +12,7 @@ public class Trade {
    private int size;
    private int price;
    private long timestamp;
+   private String username;
 
    public Trade(Order order, int size, int price) {
       this.orderId = order.getOrderId();
@@ -28,6 +29,8 @@ public class Trade {
       this.size = size;
       this.price = price;
       this.timestamp = Instant.now().getEpochSecond();
+
+      this.username = order.getUsername();
    }
 
    public int getOrderId() {
@@ -53,6 +56,15 @@ public class Trade {
    public long getTimestamp() {
       return timestamp;
    }
+
+   public String getUsername() {
+      return username;
+   }
+
+   public void clearUsername() {
+      username = "";
+   }
+
 
    @Override
    public String toString() {
