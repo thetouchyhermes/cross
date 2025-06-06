@@ -121,27 +121,22 @@ public class TcpClient implements Closeable {
       return null;
    }
 
-   /**
-    * Sends a request to the server and waits for a response.
-    * 
-    * @param request the {@link Request} object to send to the server
-    * @return a {@link Response} or {@code null} if the client is not alive or the
-    *         response cannot be parsed
-    * @throws IOException if an I/O error occurs
-    */
-   public Response sendRequest(Request request) throws IOException {
+   public void sendRequest(Request request) throws IOException {
       if (!isAlive())
-         return null;
+         throw new IOException("Socket is not alive");
       if (request == null || request.getOperation() == null)
-         return null;
+         throw new IllegalArgumentException("Request or operation is null");
 
       synchronized (obj) {
          receivedResponse = null;
          out.write(JsonUtil.toJson(request));
          out.newLine();
          out.flush();
+      }
+   }
 
-         // Wait for response with timeout (optional: adjust as needed)
+   public Response receiveResponse() throws IOException {
+      synchronized (obj) {
          while (receivedResponse == null && isAlive()) {
             try {
                obj.wait();
@@ -153,7 +148,7 @@ public class TcpClient implements Closeable {
          return receivedResponse;
       }
    }
-
+   
    @Override
    public void close() {
       running = false;

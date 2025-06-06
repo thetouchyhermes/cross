@@ -34,19 +34,19 @@ public class ClientMain {
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 
          running = false;
-
-         if (!tcpClient.isServerAlive()) {
-            tcpClient.close();
-         }
          
          if (tcpClient != null && tcpClient.isAlive()) {
             Request logout = new Request();
             logout.setOperation("logout");
             try {
+               System.out.println("entrato in logout");
                tcpClient.sendRequest(logout);
+               System.out.println("uscito da logout");
             } catch (IOException e) {
                Prompt.printError("[ClientMain] server didn't close this socket");
             }
+
+            tcpClient.close();
          }
 
          if (udpListener != null) {
@@ -151,7 +151,8 @@ public class ClientMain {
                   default:
                }
 
-               Response response = tcpClient.sendRequest(request);
+               tcpClient.sendRequest(request);
+               
                
                if (operation.equals("exit"))
                   System.exit(0);
