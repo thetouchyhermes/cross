@@ -12,6 +12,11 @@ public class UdpNotifier {
    public UdpNotifier(String udpAddress, int udpPort) {
       this.udpAddress = udpAddress;
       this.udpPort = udpPort;
+      try {
+         notify("udpNotifier is active\n");
+      } catch (IOException e) {
+         System.err.println("[UdpNotifier] Couldn't send first message");
+      }
    }
 
    public void notify(String message) throws IOException {

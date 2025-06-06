@@ -48,11 +48,11 @@ public class ServerMain {
             System.err.println("[Server] error while loading persistence files: " + e.getMessage());
          }
          
-         UserBook userBook = new UserBook(users);
-         OrderBook orderBook = new OrderBook(orders);
-
          // set up UDP notifier
          UdpNotifier udpNotifier = new UdpNotifier(udpAddress, udpPort);
+
+         UserBook userBook = new UserBook(users);
+         OrderBook orderBook = new OrderBook(orders, udpNotifier);
 
          // schedule periodic persistence
          ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -71,7 +71,7 @@ public class ServerMain {
 
          // Handler function for normal termination, exception and anomalous interruption
          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("[Server] shutting down...");
+            
             try {
                if (tcpServer != null)
                   tcpServer.stop();

@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import it.unipi.cross.data.LimitOrder;
@@ -14,6 +16,7 @@ import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
 import it.unipi.cross.history.PriceHistory;
+import it.unipi.cross.history.PriceHistoryCalculator;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
@@ -49,7 +52,9 @@ public class TcpWorker implements Runnable {
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
          while (running && !Thread.currentThread().isInterrupted()) {
             line = in.readLine();
-
+            if (line == null || line.isBlank()) {
+               break;
+            }
             Request request = JsonUtil.fromJson(line, Request.class);
             Response response = processRequest(request);
             if (!running)
@@ -76,13 +81,16 @@ public class TcpWorker implements Runnable {
       } catch (SocketTimeoutException e) {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
-         System.err.println("[Server] error on socket of client " + socket.getPort());
+         System.out.println("[Server] disconnected client " + socket.getPort());
       } catch (Exception e) {
-         System.err.println("[Server] generic error for client " + socket.getPort());
+         // System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
+         e.printStackTrace();
       } finally {
          try {
-            socket.close();
-            System.out.println("[Server] disconnected client " + socket.getPort());
+            if (socket != null && !socket.isClosed()) {
+               socket.close();
+               System.out.println("[Server] disconnected client " + socket.getPort());
+            }
          } catch (IOException e) {
             System.err.println("[Server] error while closing socket of client " + socket.getPort());
          }
@@ -90,7 +98,7 @@ public class TcpWorker implements Runnable {
 
    }
 
-   private Response processRequest(Request request) throws IOException {
+   private Response processRequest(Request request) throws IOException, NullPointerException {
       if (request == null)
          return null;
 
@@ -104,18 +112,17 @@ public class TcpWorker implements Runnable {
 
       switch (operation) {
          case "register":
-            // user must be not logged in from client
             if (!username.isEmpty()) {
                response = new MessageResponse(103, "user currently logged in");
                break;
             }
-            if (values.get("password").toString().isBlank()) {
+            if (request.getAsString("password").isBlank()) {
                response = new MessageResponse(101, "invalid password");
                break;
             }
             response = userBook.register(
-                  values.get("username").toString(),
-                  values.get("password").toString());
+                  request.getAsString("username"),
+                  request.getAsString("password"));
             break;
          case "updateCredentials":
             if (!username.isEmpty()) {
@@ -123,11 +130,9 @@ public class TcpWorker implements Runnable {
                break;
             }
             response = userBook.updateCredentials(
-                  values.get("username")
-                        .toString(),
-                  values.get("old_password")
-                        .toString(),
-                  values.get("new_password").toString());
+                  request.getAsString("username"),
+                  request.getAsString("old_password"),
+                  request.getAsString("new_password"));
             break;
          case "login":
             if (!username.isEmpty()) {
@@ -136,12 +141,11 @@ public class TcpWorker implements Runnable {
                break;
             }
             MessageResponse messageResponse = userBook.login(
-                  values.get("username")
-                        .toString(),
-                  values.get("password").toString());
+                  request.getAsString("username"),
+                  request.getAsString("password"));
 
             if (messageResponse.getResponse() == 100) {
-               username = values.get("username").toString();
+               username = request.getAsString("username");
             }
 
             response = messageResponse;
@@ -161,15 +165,12 @@ public class TcpWorker implements Runnable {
                break;
             }
             try {
-               int size = ((Number) values.get("size")).intValue();
-               int price = ((Number) values.get("price")).intValue();
                LimitOrder limit = new LimitOrder(
                      username,
-                     Type.valueOf(values.get("type")
-                           .toString()),
-                     size,
-                     price,
-                     System.currentTimeMillis());
+                     Type.valueOf(request.getAsString("type")),
+                     request.getAsInteger("size"),
+                     request.getAsInteger("price"),
+                     Instant.now().getEpochSecond());
                response = new OrderResponse(orderBook.insertOrder(limit));
             } catch (Exception e) {
                System.err.println(e.getClass() + ": " + e.getMessage());
@@ -182,13 +183,12 @@ public class TcpWorker implements Runnable {
                break;
             }
             try {
-               int size = ((Number) values.get("size")).intValue();
                MarketOrder market = new MarketOrder(
                      username,
-                     Type.valueOf(values.get("type")
-                           .toString()),
-                     size,
-                     System.currentTimeMillis());
+                     Type.valueOf(request.getAsString("type")),
+                     request.getAsInteger(
+                           "size"),
+                     Instant.now().getEpochSecond());
                response = new OrderResponse(orderBook.insertOrder(market));
             } catch (Exception e) {
                System.err.println(e.getClass() + ": " + e.getMessage());
@@ -201,15 +201,14 @@ public class TcpWorker implements Runnable {
                break;
             }
             try {
-               int size = ((Number) values.get("size")).intValue();
-               int price = ((Number) values.get("price")).intValue();
                StopOrder stop = new StopOrder(
                      username,
-                     Type.valueOf(values.get("type")
-                           .toString()),
-                     size,
-                     price,
-                     System.currentTimeMillis());
+                     Type.valueOf(request.getAsString("type")),
+                     request.getAsInteger(
+                           "size"),
+                     request.getAsInteger(
+                           "price"),
+                     Instant.now().getEpochSecond());
                response = new OrderResponse(orderBook.insertOrder(stop));
             } catch (Exception e) {
                System.err.println(e.getClass() + ": " + e.getMessage());
@@ -221,16 +220,17 @@ public class TcpWorker implements Runnable {
                response = new MessageResponse(101, "user not logged in");
             }
             try {
-               int orderId = ((Number) values.get("orderId")).intValue();
-               response = orderBook.cancelOrder(orderId, username);
+               response = orderBook.cancelOrder(
+                     request.getAsInteger("orderId"),
+                     username);
             } catch (Exception e) {
                System.err.println(e.getClass() + ": " + e.getMessage());
                response = new OrderResponse(-1);
             }
             break;
          case "getPriceHistory":
-            PriceHistory history = new PriceHistory();
-            history.getPriceHistory(values.get("month").toString());
+            PriceHistoryCalculator history = new PriceHistoryCalculator();
+            List<PriceHistory> prices = history.getPriceHistory(request.getAsString("month"));
             break;
          case "exit":
             if (!username.isEmpty()) {

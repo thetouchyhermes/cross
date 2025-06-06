@@ -72,8 +72,8 @@ public class MatchingAlgorithm {
             int tradePrice = bookOrder.getPrice();
 
             // notify trade for both orders on the tradeSize and tradePrice
-            System.out.println(Trade.toString(market, tradeSize, tradePrice));
-            System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
+            orderBook.notify(new Trade(market, tradeSize, tradePrice).toString());
+            orderBook.notify(new Trade(bookOrder, tradeSize, tradePrice).toString());
             
             market.setSize(market.getSize() - tradeSize);
             bookOrder.setSize(bookOrder.getSize() - tradeSize);
@@ -139,8 +139,8 @@ public class MatchingAlgorithm {
          int tradePrice = bookOrder.getPrice();
 
          // notify trade for both orders on the tradeSize and tradePrice
-         System.out.println(Trade.toString(limit, tradeSize, tradePrice));
-         System.out.println(Trade.toString(bookOrder, tradeSize, tradePrice));
+         orderBook.notify(new Trade(limit, tradeSize, tradePrice).toString());
+         orderBook.notify(new Trade(bookOrder, tradeSize, tradePrice).toString());
 
          bookOrder.setSize(bookOrder.getSize() - tradeSize);
          limit.setSize(limit.getSize() - tradeSize);

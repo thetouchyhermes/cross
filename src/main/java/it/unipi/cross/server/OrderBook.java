@@ -1,5 +1,6 @@
 package it.unipi.cross.server;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +18,9 @@ import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
+import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.Response;
+import it.unipi.cross.network.UdpNotifier;
 
 public class OrderBook {
 
@@ -36,20 +39,23 @@ public class OrderBook {
    // To handle stop orders (used only in synchronized methods)
    private final List<StopOrder> stopOrders = new ArrayList<>();
 
-   // Listeners for completion notification
-   // private final OrderListener listener = new OrderListener();
+   // udp connection to notify order completion
+   private final UdpNotifier udpNotifier;
 
    private int bestBidPrice = -1;
    private int bestAskPrice = -1;
 
-   public OrderBook(List<Order> orders) {
+   public OrderBook(List<Order> orders, UdpNotifier udpNotifier) {
+
+      this.udpNotifier = udpNotifier;
+      
       if (orders != null && !orders.isEmpty()) {
          for (Order order : orders) {
             orderMap.put(order.getOrderId(), order);
          }
 
          int lastId = Collections.max(orderMap.keySet());
-         idGenerator.set(lastId + 1);
+         this.idGenerator.set(lastId + 1);
 
          for (Order order : orderMap.values()) {
             if (order.getType() == Type.ask) {
@@ -146,9 +152,9 @@ public class OrderBook {
       Order order = orderMap.get(orderId);
 
       if (order == null)
-         return new Response(101, "order does not exist or has already been finalized");
+         return new MessageResponse(101, "order does not exist or has already been finalized");
       if (!order.getUsername().equals(username))
-         return new Response(101, "order belongs to a different user");
+         return new MessageResponse(101, "order belongs to a different user");
 
       orderMap.remove(orderId);
       if (order.getOrderType() == OrderType.limit) {
@@ -166,7 +172,7 @@ public class OrderBook {
       }
       // market orders cannot be canceled anyway
 
-      return new Response(100, "OK");
+      return new MessageResponse(100, "OK");
    }
 
    // matching algorithm access
@@ -252,9 +258,15 @@ public class OrderBook {
             }               
          }
       }
-
    }
 
+   public void notify(String message) {
+      try {
+         udpNotifier.notify(message);
+      } catch (IOException e) {
+         System.err.println("[UdpNotifier] Error during notification");
+      }
+   }
    /**
     * Retrieves a list of all limit orders from the order book.
     *
