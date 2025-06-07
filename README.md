@@ -15,6 +15,15 @@ Versione 1.3
 
 - all stop orders are implemented as day orders: they expire at the end of the current session (namely at server closure)
 
+- user logic and market and limit orders work
+- udp work
+- tcp work
+- persistence work
+- stop orders not working
+- price history to be finished
+- to comment
+- to document
+
 Da consegnare:
 1. Codice sorgente commentato di tutte le classi e test, deve funzionare con javac
 2. Classi con main hanno "Main" nel nome

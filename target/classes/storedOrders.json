@@ -1,31 +1,3 @@
 {
-  "orders": [
-    {
-      "orderId": 8,
-      "username": "catia",
-      "type": "ask",
-      "orderType": "limit",
-      "size": 1,
-      "price": 200,
-      "timestamp": 1749247864
-    },
-    {
-      "orderId": 10,
-      "username": "primo",
-      "type": "bid",
-      "orderType": "limit",
-      "size": 3,
-      "price": 110,
-      "timestamp": 1749247880
-    },
-    {
-      "orderId": 11,
-      "username": "catia",
-      "type": "bid",
-      "orderType": "limit",
-      "size": 3,
-      "price": 110,
-      "timestamp": 1749248041
-    }
-  ]
+  "orders": []
 }
