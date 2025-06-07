@@ -8,17 +8,16 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.time.Instant;
-import java.util.List;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
-import it.unipi.cross.history.PriceHistory;
 import it.unipi.cross.history.PriceHistoryCalculator;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
+import it.unipi.cross.json.PriceHistory;
 import it.unipi.cross.json.Request;
 import it.unipi.cross.json.Response;
 import it.unipi.cross.server.OrderBook;
@@ -64,12 +63,8 @@ public class TcpWorker implements Runnable {
                out.flush();
             }
             if (!username.isEmpty() && request.getOperation().equals("logout")) {
-               break;
+               running = false;
             }
-         }
-         if (!username.isEmpty()) {
-            userBook.logout(username);
-            username = "";
          }
          /*
          if (Thread.currentThread().isInterrupted()) {
@@ -82,11 +77,15 @@ public class TcpWorker implements Runnable {
       } catch (SocketTimeoutException e) {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
-         System.out.println("[Server] disconnected client " + socket.getPort());
+         System.out.println("[Server] IOException on " + socket.getPort() + "\n" + e.getClass() + ": " + e.getMessage());
       } catch (Exception e) {
          System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
          // e.printStackTrace();
       } finally {
+         if (!username.isEmpty()) {
+            userBook.logout(username);
+            username = "";
+         }
          try {
             if (socket != null && !socket.isClosed()) {
                socket.close();
@@ -229,7 +228,8 @@ public class TcpWorker implements Runnable {
             break;
          case "getPriceHistory":
             PriceHistoryCalculator history = new PriceHistoryCalculator();
-            List<PriceHistory> prices = history.getPriceHistory(request.getAsString("month"));
+            PriceHistory priceHistory = history.getPriceHistory(request.getAsString("month"));
+            response = priceHistory;
             break;
          case "exit":
             if (!username.isEmpty()) {

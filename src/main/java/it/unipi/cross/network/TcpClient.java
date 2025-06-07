@@ -12,6 +12,7 @@ import java.net.Socket;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
+import it.unipi.cross.json.PriceHistory;
 import it.unipi.cross.json.Request;
 import it.unipi.cross.json.Response;
 
@@ -71,15 +72,6 @@ public class TcpClient implements Closeable {
                line = in.readLine();
 
                Response response = stringToResponse(line);
-               /**
-                * if (response != null && response instanceof MessageResponse) {
-                  MessageResponse msg = (MessageResponse) response;
-                  if (msg.getResponse() == 500) {
-                     serverRunning = false;
-                     System.out.println("[Client " + socket.getLocalPort() + "] server closed the connection");
-                     System.exit(1);
-                  }
-               } */
                if (line == null) {
                   System.out.println("[Client " + socket.getLocalPort() + "] disconnected from server");
                   System.exit(1);
@@ -115,6 +107,12 @@ public class TcpClient implements Closeable {
          return orderResponse;
       }
 
+      // fallback to PriceHistory
+      PriceHistory priceHistory = JsonUtil.fromJson(line, PriceHistory.class);
+      if (priceHistory != null && priceHistory.getDailyStats() != null) {
+         return priceHistory;
+      }
+
       return null;
    }
 
@@ -124,8 +122,8 @@ public class TcpClient implements Closeable {
 
       if (!isAlive())
          throw new IOException("Socket is not alive");
-      if (request == null || request.getOperation() == null)
-         throw new IllegalArgumentException("Request or operation is null");
+      if (request == null)
+         throw new IllegalArgumentException("Request is null");
 
       synchronized (obj) {
          receivedResponse = null;

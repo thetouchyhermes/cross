@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.util.LinkedList;
+import java.util.List;
 
 import it.unipi.cross.data.Trade;
 import it.unipi.cross.json.JsonUtil;
@@ -46,13 +48,15 @@ public class UdpListener implements Runnable {
                Notification notification = JsonUtil.fromJson(message, Notification.class);
                if (notification == null)
                   continue;
-                  
-               for (Trade ut : notification.getTrades()) {
-                  if (ut.getUsername().equals(username)) {
-                     Trade trade = JsonUtil.fromJson(JsonUtil.toJson(ut), Trade.class);
-                     System.out.println("[NOTIFICATION]\n" + trade.toString());
+               
+               List<Trade> userTrades = new LinkedList<>();
+               for (Trade trade : notification.getTrades()) {
+                  if (trade.getUsername().equals(username)) {
+                     trade.setUsername("");
+                     userTrades.add(trade);
                   }
                }
+               System.out.println(new Notification(userTrades).toString());
             }
          }
 

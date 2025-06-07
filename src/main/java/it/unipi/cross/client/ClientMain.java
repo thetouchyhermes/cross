@@ -10,6 +10,7 @@ import org.fusesource.jansi.AnsiConsole;
 import it.unipi.cross.config.ConfigReader;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
+import it.unipi.cross.json.PriceHistory;
 import it.unipi.cross.json.Request;
 import it.unipi.cross.json.Response;
 import it.unipi.cross.network.TcpClient;
@@ -215,6 +216,8 @@ public class ClientMain {
                         System.out.println("order placed correctly:\n" + response.toString());
                         break;
                   }
+               } else if (response instanceof PriceHistory) {
+                  System.out.println(response.toString());
                }
             }
          }

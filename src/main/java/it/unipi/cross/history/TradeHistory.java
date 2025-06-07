@@ -1,27 +1,26 @@
-package it.unipi.cross.json;
+package it.unipi.cross.history;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import it.unipi.cross.data.Trade;
+import it.unipi.cross.json.TradeTypeAdapter;
 
-public class Notification {
-   private final String notification = "closedTrades";
-   private final List<Trade> trades;
+public class TradeHistory {
+   private List<Trade> trades;
 
-   public Notification(List<Trade> trades) {
-      this.trades = new LinkedList<>(trades);
-   }
-
-   public String getNotification() {
-      return notification;
+   public TradeHistory(List<Trade> trades) {
+      this.trades = trades;
    }
 
    public List<Trade> getTrades() {
       return trades;
+   }
+
+   public void setTrades(List<Trade> trades) {
+      this.trades = trades;
    }
 
    @Override
@@ -32,5 +31,4 @@ public class Notification {
             .create();
       return gson.toJson(this);
    }
-   
 }

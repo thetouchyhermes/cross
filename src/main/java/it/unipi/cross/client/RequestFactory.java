@@ -1,5 +1,6 @@
 package it.unipi.cross.client;
 
+import java.time.Year;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -49,7 +50,7 @@ public class RequestFactory {
       }
 
       String type;
-      int size, price, orderId, month;
+      int size, price, orderId;
 
       try {
          switch (command) {
@@ -128,13 +129,20 @@ public class RequestFactory {
                   break;
                }
 
-               month = Integer.parseInt(paramList.get(0));
-               if (month < 10000) {
+               String monthString = paramList.get(0);
+               int month = Integer.parseInt(monthString);
+               if (month < 10000 || month > 129999) {
+                  request.setOperation("invalidArgs");
+                  break;
+               }
+               int monthNum = Integer.parseInt(monthString.substring(0,2));
+               int yearNum = Integer.parseInt(monthString.substring(2));
+               if (monthNum < 1 || monthNum > 12 || yearNum < 1970 || yearNum > Year.now().getValue()) {
                   request.setOperation("invalidArgs");
                   break;
                }
 
-               values.put("month", paramList.get(0));
+               values.put("month", monthString);
                break;
             case "help":
                if (paramList.size() > 1) {

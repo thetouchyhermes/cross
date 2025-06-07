@@ -5,7 +5,6 @@ import com.google.gson.GsonBuilder;
 
 public abstract class Response {
 
-   // for testing
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()
