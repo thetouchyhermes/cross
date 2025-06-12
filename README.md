@@ -1,7 +1,7 @@
-# Reti e Laboratorio: Modulo Laboratorio 3
 # CROSS: an exChange oRder bOokS Service
-# Progetto di Fine Corso A.A. 2024/25
-# Versione 1.3
+Reti e Laboratorio: Modulo Laboratorio 3
+Progetto di Fine Corso A.A. 2024/25
+Versione 1.3
 
 ## Write down about
 - Definizione delle scelte effettuate (dove interpretare)
