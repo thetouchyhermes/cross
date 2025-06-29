@@ -24,7 +24,7 @@ public class UdpTest {
         originalOut = System.out;
         System.setOut(new PrintStream(outContent));
 
-        listener = new UdpListener(MULTICAST_ADDRESS, PORT);
+        listener = new UdpListener(MULTICAST_ADDRESS, PORT, "ciao");
         listenerThread = new Thread(listener);
         listenerThread.start();
         Thread.sleep(1000); // Let listener start
