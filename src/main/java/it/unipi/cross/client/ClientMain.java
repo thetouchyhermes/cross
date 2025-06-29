@@ -35,6 +35,8 @@ public class ClientMain {
       // Handler function for normal termination, exception and anomalous interruption
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       
+         running = false;
+
          if (tcpClient != null && tcpClient.isAlive()) {
             Request logout = new Request();
             logout.setOperation("logout");
@@ -153,7 +155,7 @@ public class ClientMain {
                   default:
                }
 
-               System.out.println(request.toString());
+               // System.out.println(request.toString());
                tcpClient.sendRequest(request);
                Response response = tcpClient.receiveResponse();
 
@@ -217,7 +219,12 @@ public class ClientMain {
                         break;
                   }
                } else if (response instanceof PriceHistory) {
-                  System.out.println(response.toString());
+                  PriceHistory priceHistory = (PriceHistory) response;
+                  if (priceHistory.getDailyStats() == null || priceHistory.getDailyStats().isEmpty()) {
+                     System.out.println("No entries of this month are available");
+                  } else {
+                     System.out.println(response.toString());
+                  }
                }
             }
          }

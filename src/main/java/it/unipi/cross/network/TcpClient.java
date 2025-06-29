@@ -84,7 +84,7 @@ public class TcpClient implements Closeable {
             }
          } catch (IOException e) {
             if (running) {
-               System.err.println("[TcpClient] Receiver thread error: " + e.getMessage());
+               System.err.println("[Client] receiver thread: disconnected from server");
             }
             System.exit(1);
          }

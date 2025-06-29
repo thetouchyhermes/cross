@@ -65,6 +65,11 @@ public class PriceHistoryCalculator {
             }
          }
 
+         // Indicated month has no entries
+         if (tradesByDay.isEmpty()) {
+            return new PriceHistory(new ArrayList<>());
+         }
+         
          // Generate daily stats for all days in the month (including days with no trades)
          List<DailyStats> dailyStatsList = new ArrayList<>();
          ZonedDateTime startDate = ZonedDateTime.of(year, monthNum, 1, 0, 0, 0, 0, ZoneId.systemDefault());

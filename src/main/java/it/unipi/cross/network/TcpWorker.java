@@ -45,6 +45,7 @@ public class TcpWorker implements Runnable {
       System.out.println("[Server] connected client " + socket.getPort());
       String line = null;
 
+      Request request = null;
       try (
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
@@ -53,7 +54,7 @@ public class TcpWorker implements Runnable {
             if (line == null || line.isBlank()) {
                break;
             }
-            Request request = JsonUtil.fromJson(line, Request.class);
+            request = JsonUtil.fromJson(line, Request.class);
             Response response = processRequest(request);
             if (!running)
                break;
@@ -77,7 +78,11 @@ public class TcpWorker implements Runnable {
       } catch (SocketTimeoutException e) {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
-         System.out.println("[Server] IOException on " + socket.getPort() + "\n" + e.getClass() + ": " + e.getMessage());
+         if (request.getOperation().equals("logout")) {
+            System.out.println("[Server] disconnected client " + socket.getPort());
+         } else {
+            System.out.println("[Server] IOException on " + socket.getPort());
+         }
       } catch (Exception e) {
          System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
          // e.printStackTrace();

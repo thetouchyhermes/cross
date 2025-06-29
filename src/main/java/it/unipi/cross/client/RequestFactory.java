@@ -22,7 +22,7 @@ public class RequestFactory {
       List<String> paramList = new ArrayList<>(Arrays.asList(params));
       paramList.replaceAll(str -> str.trim());
 
-      System.out.println(command + " (" + String.join(", ", paramList) + ")");
+      // System.out.println(command + " (" + String.join(", ", paramList) + ")");
 
       Request request = new Request();
       Map<String, Object> values = new LinkedHashMap<>();
