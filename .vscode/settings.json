@@ -5,5 +5,6 @@
    "code-runner.executorMap": {
       "java": "cd $dir && javac $fileName && java $fileNameWithoutExt"
    },
-   "java.debug.settings.onBuildFailureProceed": true
+   "java.debug.settings.onBuildFailureProceed": true,
+   "maven.terminal.useJavaHome": true
 }
