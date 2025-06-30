@@ -19,4 +19,17 @@ public class PriceHistory extends Response {
       this.dailyStats = dailyStats;
    }
 
+   public void printDailyStats() {
+      System.out.println("\nDailyStats for " + getDailyStats().get(0).getDay().substring(3) + " (1 unit = 0.001BTC)");
+      System.out.println(" ------------------------------------------------------------------------------ ");
+      System.out.printf("| %-12s | %13s | %13s | %13s | %13s |%n", 
+            "Day", "Opening Price", "Closing Price", "Max Price", "Min Price");
+      System.out.println(" ------------------------------------------------------------------------------ ");
+      for (DailyStats stats : getDailyStats()) {
+            System.out.printf("| %-12s | %13d | %13d | %13d | %13d |%n",
+               stats.getDay(), stats.getOpeningPrice(), stats.getClosingPrice(), stats.getMaximumPrice(), stats.getMinimumPrice());
+      }
+      System.out.println(" ------------------------------------------------------------------------------ \n");
+   }
+
 }

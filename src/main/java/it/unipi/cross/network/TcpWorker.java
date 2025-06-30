@@ -247,7 +247,8 @@ public class TcpWorker implements Runnable {
 
       // test
       System.out
-            .println("[Server] received request: " + request.toString() + "\nsent response: " + response.toString());
+            .println("[Server] request from " + socket.getPort() + ":\n" + request.toString());
+      System.out.println("[Server] response to " + socket.getPort() + ":\n" + response.toString());
 
       return response;
    }

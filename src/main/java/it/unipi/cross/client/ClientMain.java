@@ -101,13 +101,13 @@ public class ClientMain {
             if (!running)
                break;
             if (line.isEmpty() || !line.contains("(") || !line.contains(")")) {
-               System.out.println("command format not valid");
+               System.out.println("Command format not valid");
                continue;
             }
             String command = line.split("\\(")[0].trim();
 
             if (command == null || command.isEmpty()) {
-               Prompt.printError("command is empty");
+               Prompt.printError("Command is empty");
                continue;
             }
             switch (command) {
@@ -124,7 +124,7 @@ public class ClientMain {
                case "exit":
                   break;
                default:
-                  System.out.println("command not defined");
+                  System.out.println("Command not defined");
                   continue;
             }
 
@@ -135,11 +135,11 @@ public class ClientMain {
                Map<String, Object> values = request.getValues();
                switch (operation) {
                   case "notDefined":
-                     System.out.println("command not defined for this number of args");
+                     System.out.println("Command not defined for this number of args");
                      Prompt.printHelp(command);
                      continue;
                   case "invalidArgs":
-                     System.out.println("args not valid");
+                     System.out.println("Args not valid");
                      Prompt.printHelp(command);
                      continue;
                   case "help":
@@ -177,23 +177,13 @@ public class ClientMain {
                      case 100:
                         switch (operation) {
                            case "login":
-                              if (username.isEmpty()) {
-                                 if (values.get("username") != null) {
-                                    username = values.get("username").toString();
-                                 }
-                              } else {
-                                 Prompt.printError("user was already logged before login");
-                                 System.exit(1);
+                              if (values.get("username") != null) {
+                                 username = values.get("username").toString();
                               }
                               break;
                            case "logout":
-                              if (!username.isEmpty()) {
-                                 username = "";
-                                 System.exit(0);
-                              } else {
-                                 Prompt.printError("user was not logged before logout");
-                                 System.exit(1);
-                              }
+                              username = "";
+                              System.exit(0);
                         }
                      default:
                         System.out.println(response.toString());
@@ -209,13 +199,13 @@ public class ClientMain {
                         System.exit(1);
                      case -1:
                         if (username.isEmpty()) {
-                           System.out.println("user not logged in");
+                           System.out.println("User not logged in");
                            break;
                         }
-                        System.out.println("order failed or discarded:\n" + response.toString());
+                        System.out.println("Order failed or discarded:\n" + response.toString());
                         break;
                      default:
-                        System.out.println("order placed correctly:\n" + response.toString());
+                        System.out.println("Order placed correctly:\n" + response.toString());
                         break;
                   }
                } else if (response instanceof PriceHistory) {
@@ -223,7 +213,7 @@ public class ClientMain {
                   if (priceHistory.getDailyStats() == null || priceHistory.getDailyStats().isEmpty()) {
                      System.out.println("No entries of this month are available");
                   } else {
-                     System.out.println(response.toString());
+                     priceHistory.printDailyStats();
                   }
                }
             }
