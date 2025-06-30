@@ -51,7 +51,9 @@ To execute and run javac/java from maven project:
 ### [JAR]
 To execute and run javac/java directly from .jar file:
 1a. mvn clean package -Pserver
-2a. java -jar ./target/cross-server.jar
-[different terminal]
 1b. mvn package -Pclient
-2b. java -jar ./target/cross-client.jar
+
+[on terminal 1]
+2a. java -jar ./target/cross-server.jar
+[on terminal 2]
+2b. java --enable-native-access=ALL-UNNAMED -jar .\target\cross-client.jar 

@@ -8,6 +8,7 @@
     <name>CROSS</name>
 
     <!-- ./mvnw versions:display-dependency-updates -->
+    <!-- ./mvnw versions:display-plugin-updates -->
 
     <dependencies>
         <dependency>
@@ -34,6 +35,49 @@
     </dependencies>
 
     <build>
+        <finalName>${jar.finalName}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <mainClass>${main.class}</mainClass>
+                </configuration>
+            </plugin>
+            <!--<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${main.class}</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin> -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                    <phase>package</phase>
+                    <goals>
+                        <goal>shade</goal>
+                    </goals>
+                    <configuration>
+                        <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>${main.class}</mainClass>
+                        </transformer>
+                        </transformers>
+                    </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -55,36 +99,18 @@
     <profiles>
         <profile>
             <id>client</id>
-            <build>
-                <finalName>cross-client</finalName>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.5.0</version>
-                        <configuration>
-                            <mainClass>cross.ClientMain</mainClass>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <main.class>it.unipi.cross.client.ClientMain</main.class>
+                <jar.finalName>cross-client</jar.finalName>
+            </properties>
         </profile>
 
         <profile>
             <id>server</id>
-            <build>
-                <finalName>cross-server</finalName>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.5.0</version>
-                        <configuration>
-                            <mainClass>cross.ServerMain</mainClass>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <main.class>it.unipi.cross.server.ServerMain</main.class>
+                <jar.finalName>cross-server</jar.finalName>
+            </properties>
         </profile>
     </profiles>
 </project>
