@@ -16,7 +16,7 @@ import it.unipi.cross.json.Response;
 import it.unipi.cross.network.TcpClient;
 import it.unipi.cross.network.UdpListener;
 
-public class ClientMain {
+public class ClientMainm {
 
    private static TcpClient tcpClient;
    private static UdpListener udpListener;
@@ -68,7 +68,7 @@ public class ClientMain {
          System.exit(1);
       }
 
-      // String udpAddress = config.getString("udp.address");
+      String udpAddress = config.getString("udp.address");
       int udpPort = config.getInt("udp.port");
       String tcpAddress = config.getString("tcp.address");
       int tcpPort = config.getInt("tcp.port");
@@ -89,8 +89,7 @@ public class ClientMain {
 
             if (!udpStarted && !username.isEmpty()) {
                // create and start UDP listener
-               // udpListener = new UdpListener(udpAddress, udpPort, username);
-               udpListener = new UdpListener(udpPort, username);
+               udpListener = new UdpListener(udpAddress, udpPort, username);
                Thread udpThread = new Thread(udpListener);
                udpThread.start();
                udpStarted = true;
@@ -153,17 +152,10 @@ public class ClientMain {
                      if (com != null)
                         Prompt.printHelp(com);
                      continue;
-                  case "login":
-                     if (values != null) {
-                        values.put("udpPort", udpPort);
-                     }
-                     request.setValues(values);
-                     break;
                   default:
                }
 
-               // to comment
-               System.out.println(request.toString());
+               // System.out.println(request.toString());
                tcpClient.sendRequest(request);
                Response response = tcpClient.receiveResponse();
 

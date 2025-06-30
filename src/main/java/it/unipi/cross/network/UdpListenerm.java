@@ -2,9 +2,8 @@ package it.unipi.cross.network;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
+import java.net.MulticastSocket;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -12,14 +11,16 @@ import it.unipi.cross.data.Trade;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.Notification;
 
-public class UdpListener implements Runnable {
+public class UdpListenerm implements Runnable {
+   private final String udpAddress;
    private final int udpPort;
    private final String username;
 
-   private DatagramSocket socket;
+   private MulticastSocket socket;
    private volatile boolean running = true;
 
-   public UdpListener(int udpPort, String username) {
+   public UdpListener(String udpAddress, int udpPort, String username) {
+      this.udpAddress = udpAddress;
       this.udpPort = udpPort;
       this.username = username;
    }
@@ -27,13 +28,21 @@ public class UdpListener implements Runnable {
    @Override
    public void run() {
       try {
-         // Create DatagramSocket bound to specific port for receiving unicast messages
-         socket = new DatagramSocket(udpPort, InetAddress.getLocalHost());
-         socket.setSoTimeout(5000); // 5 second timeout
+         MulticastSocket socket = new MulticastSocket(udpPort);
+         this.socket = socket;
 
-         System.out.println("[UdpListener] Listening on port " + udpPort + " for user " + username);
+         socket.setTimeToLive(0);
+         socket.setLoopbackMode(false);
 
-         while (running) {
+         InetAddress addr = InetAddress.getByName(udpAddress);
+         // SocketAddress sockAddr = new InetSocketAddress(addr, udpPort);
+         // NetworkInterface netIf = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+
+         // MulticastSocket.joinGroup(InetAddress) is deprecated since Java 9
+         socket.joinGroup(addr);
+         // socket.joinGroup(sockAddr, netIf);
+
+         while(running) {
             String message = pullMessage(socket);
             if (message != null && !message.isEmpty()) {
                List<Trade> trades = pullTrades(message);
@@ -43,31 +52,26 @@ public class UdpListener implements Runnable {
             }
          }
 
+         socket.leaveGroup(addr);
+         // socket.leaveGroup(sockAddr, netIf);
       } catch (IOException e) {
          if (running) {
-            System.err.println("[UdpListener] " + e.getClass() + ": " + e.getMessage());
-         }
-      } finally {
-         if (socket != null && !socket.isClosed()) {
-            socket.close();
+            System.err.println("[UdpListener] " + e.getClass() + e.getMessage());
          }
       }
    }
 
-   private String pullMessage(DatagramSocket socket) throws IOException {
-      try {
-         byte[] buf = new byte[1024];
-         DatagramPacket packet = new DatagramPacket(buf, buf.length);
+   private String pullMessage(MulticastSocket socket) throws IOException {
+      socket.setSoTimeout(5000);
+      byte[] buf = new byte[1024];
+      DatagramPacket packet = new DatagramPacket(buf, buf.length);
+      System.out.println("hello pre receive");
+      socket.receive(packet);
+      System.out.println("hello post receive");
 
-         socket.receive(packet);
+      String message = new String(packet.getData(), 0, packet.getLength());
 
-         String message = new String(packet.getData(), 0, packet.getLength());
-         return message;
-
-      } catch (SocketTimeoutException e) {
-         // Timeout is expected for graceful shutdown checking
-         return null;
-      }
+      return message;
    }
 
    private List<Trade> pullTrades(String message) {
@@ -90,9 +94,5 @@ public class UdpListener implements Runnable {
       if (socket != null && !socket.isClosed()) {
          socket.close();
       }
-   }
-
-   public int getLocalPort() {
-      return socket != null ? socket.getLocalPort() : -1;
    }
 }

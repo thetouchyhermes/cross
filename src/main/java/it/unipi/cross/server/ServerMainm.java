@@ -15,7 +15,7 @@ import it.unipi.cross.network.TcpServer;
 import it.unipi.cross.network.UdpNotifier;
 import it.unipi.cross.persistence.PersistenceManager;
 
-public class ServerMain {
+public class ServerMainm {
 
    public static void main(String[] args) {
 
@@ -31,8 +31,8 @@ public class ServerMain {
 
          int tcpPort = config.getInt("tcp.port");
          int tcpTimeout = config.getInt("tcp.timeout");
-         // int udpPort = config.getInt("udp.port");
-         // String udpAddress = config.getString("udp.address");
+         int udpPort = config.getInt("udp.port");
+         String udpAddress = config.getString("udp.address");
          String userFilePath = config.getString("persistence.user_file");
          String orderFilePath = config.getString("persistence.order_file");
          int persistInterval = config.getInt("persistence.secs");
@@ -48,9 +48,8 @@ public class ServerMain {
             System.err.println("[Server] error while loading persistence files: " + e.getMessage());
          }
          
-         // set up UDP notifier (creates its own socket)
-         // UdpNotifier udpNotifier = new UdpNotifier(udpAddress, udpPort);
-         UdpNotifier udpNotifier = new UdpNotifier();
+         // set up UDP notifier
+         UdpNotifier udpNotifier = new UdpNotifier(udpAddress, udpPort);
 
          UserBook userBook = new UserBook(users);
          OrderBook orderBook = new OrderBook(orders, udpNotifier);
@@ -68,8 +67,7 @@ public class ServerMain {
          // set up TCP server
          TcpServer tcpServer = new TcpServer(orderBook, userBook, tcpPort, tcpTimeout);
 
-         // System.out.println("[Server] started on TCP port " + tcpPort + ", UDP notifier on port " + udpNotifier.getLocalPort());
-         System.out.println("[Server] started on TCP port " + tcpPort);
+         System.out.println("[Server] started on TCP port " + tcpPort + ", UDP port " + udpPort);
 
          // Handler function for normal termination, exception and anomalous interruption
          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -79,8 +77,6 @@ public class ServerMain {
                   tcpServer.stop();
                if (scheduler != null)
                   scheduler.shutdownNow();
-               if (udpNotifier != null)
-                  udpNotifier.close();
                
                persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList());
             } catch (Exception e) {

@@ -23,19 +23,17 @@ import it.unipi.cross.json.Response;
 import it.unipi.cross.server.OrderBook;
 import it.unipi.cross.server.UserBook;
 
-public class TcpWorker implements Runnable {
+public class TcpWorkerm implements Runnable {
    private Socket socket;
    private OrderBook orderBook;
    private UserBook userBook;
-   private UdpNotifier udpNotifier;
    private String username;
    private volatile boolean running = false;
 
-   public TcpWorker(Socket socket, OrderBook orderBook, UserBook userBook, UdpNotifier udpNotifier) {
+   public TcpWorkerm(Socket socket, OrderBook orderBook, UserBook userBook) {
       this.socket = socket;
       this.orderBook = orderBook;
       this.userBook = userBook;
-      this.udpNotifier = udpNotifier;
       this.username = "";
    }
 
@@ -69,10 +67,18 @@ public class TcpWorker implements Runnable {
                running = false;
             }
          }
+         /*
+         if (Thread.currentThread().isInterrupted()) {
+            Response error = new MessageResponse(500, "internal server error");
+            out.write(JsonUtil.toJson(error));
+            out.newLine();
+            out.flush();
+         }
+            */
       } catch (SocketTimeoutException e) {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
-         if (request != null && request.getOperation().equals("logout")) {
+         if (request.getOperation().equals("logout")) {
             System.out.println("[Server] disconnected client " + socket.getPort());
          } else {
             System.out.println("[Server] IOException on " + socket.getPort());
@@ -83,10 +89,6 @@ public class TcpWorker implements Runnable {
       } finally {
          if (!username.isEmpty()) {
             userBook.logout(username);
-            // Remove client from UDP notifier
-            if (udpNotifier != null) {
-               udpNotifier.removeClient(username);
-            }
             username = "";
          }
          try {
@@ -108,7 +110,7 @@ public class TcpWorker implements Runnable {
       String operation = request.getOperation();
       if (operation == null || operation.isEmpty())
          return null;
-
+         
       Response response = null;
 
       switch (operation) {
@@ -147,19 +149,6 @@ public class TcpWorker implements Runnable {
 
             if (messageResponse.getResponse() == 100) {
                username = request.getAsString("username");
-               // Automatically register client for UDP notifications if udpPort is provided
-               try {
-                  Integer udpPort = request.getAsInteger("udpPort");
-                  if (udpPort != null && udpNotifier != null) {
-                        udpNotifier.addClient(username, udpPort);
-                        System.out.println("[Server] Registered UDP notifications for " + username + 
-                                         " at port " + udpPort);
-                  }
-               } catch (Exception e) {
-                  System.err.println("[Server] Warning: Could not register UDP for " + username + 
-                                   ": " + e.getMessage());
-                  // Don't fail login if UDP registration fails
-               }
             }
 
             response = messageResponse;
@@ -170,10 +159,6 @@ public class TcpWorker implements Runnable {
                break;
             }
             response = userBook.logout(username);
-            // Remove client from UDP notifier
-            if (udpNotifier != null) {
-               udpNotifier.removeClient(username);
-            }
             username = "";
             running = false;
             break;
@@ -254,10 +239,6 @@ public class TcpWorker implements Runnable {
          case "exit":
             if (!username.isEmpty()) {
                userBook.logout(username);
-               // Remove client from UDP notifier
-               if (udpNotifier != null) {
-                  udpNotifier.removeClient(username);
-               }
             }
             response = new MessageResponse(0, operation);
             running = false;
@@ -265,7 +246,8 @@ public class TcpWorker implements Runnable {
       }
 
       // test
-      System.out.println("[Server] request from " + socket.getPort() + ":\n" + request.toString());
+      System.out
+            .println("[Server] request from " + socket.getPort() + ":\n" + request.toString());
       System.out.println("[Server] response to " + socket.getPort() + ":\n" + response.toString());
 
       return response;
