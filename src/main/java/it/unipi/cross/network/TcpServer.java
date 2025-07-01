@@ -17,6 +17,7 @@ public class TcpServer {
    private int tcpPort;
    private int timeout;
    private ExecutorService threadPool;
+   private UdpNotifier udpNotifier;
    private OrderBook orderBook;
    private UserBook userBook;
    private ServerSocket serverSocket;
@@ -24,21 +25,22 @@ public class TcpServer {
 
    private volatile boolean running = false;
 
-   public TcpServer(OrderBook orderBook, UserBook userBook, int tcpPort, int timeout) {
+   public TcpServer(OrderBook orderBook, UserBook userBook, UdpNotifier udpNotifier, int tcpPort, int timeout) {
       this.orderBook = orderBook;
       this.userBook = userBook;
+      this.udpNotifier = udpNotifier;
       this.tcpPort = tcpPort;
       this.timeout = timeout;
       this.threadPool = Executors.newCachedThreadPool();
       this.activeSockets = new LinkedHashSet<>();
    }
 
-   public TcpServer(OrderBook orderBook, UserBook userBook, int tcpPort) {
-      this(orderBook, userBook, tcpPort, 30000);
+   public TcpServer(OrderBook orderBook, UserBook userBook, UdpNotifier udpNotifier, int tcpPort) {
+      this(orderBook, userBook, udpNotifier, tcpPort, 30000);
    }
 
-   public TcpServer(OrderBook orderBook, UserBook userBook) {
-      this(orderBook, userBook, 50000, 30000);
+   public TcpServer(OrderBook orderBook, UserBook userBook, UdpNotifier udpNotifier) {
+      this(orderBook, userBook, udpNotifier, 50000, 30000);
    }
 
    public void start() throws IOException {
@@ -54,7 +56,7 @@ public class TcpServer {
                   activeSockets.add(socket);
                }
 
-               TcpWorkerm worker = new TcpWorkerm(socket, orderBook, userBook);
+               TcpWorker worker = new TcpWorker(socket, orderBook, userBook, udpNotifier);
                threadPool.submit(worker, activeSockets);
             } catch (IOException e) {
                if (running)

@@ -66,7 +66,7 @@ public class ServerMain {
          }), persistInterval, persistInterval, TimeUnit.SECONDS);
 
          // set up TCP server
-         TcpServer tcpServer = new TcpServer(orderBook, userBook, tcpPort, tcpTimeout);
+         TcpServer tcpServer = new TcpServer(orderBook, userBook, udpNotifier, tcpPort, tcpTimeout);
 
          // System.out.println("[Server] started on TCP port " + tcpPort + ", UDP notifier on port " + udpNotifier.getLocalPort());
          System.out.println("[Server] started on TCP port " + tcpPort);

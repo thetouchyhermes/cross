@@ -31,12 +31,12 @@ public class UdpNotifier {
 
    // synchronized ???
    public synchronized void notifyClient(String username, String message) throws IOException {
-      int port = clientPorts.get(username);
-      if (port <= 0) {
-         System.err.println("[UdpNotifier] Failed to find client " + username + " at port " + port);
+      if (!clientPorts.containsKey(username) || clientPorts.get(username) == null) {
+         // client not connected
          return;
       }
 
+      Integer port = clientPorts.get(username);
       byte[] data = message.getBytes();
       DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), port);
 
