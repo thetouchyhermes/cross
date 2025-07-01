@@ -15,14 +15,12 @@ import it.unipi.cross.json.Notification;
 
 public class UdpListener implements Runnable {
    private int udpPort;
-   private final String username;
 
    private DatagramSocket socket;
    private volatile boolean running = false;
 
-   public UdpListener(int udpPort, String username) {
+   public UdpListener(int udpPort) {
       this.udpPort = udpPort;
-      this.username = username;
    }
 
    @Override
@@ -47,7 +45,7 @@ public class UdpListener implements Runnable {
          // socket.setSoTimeout(5000); // 5 second timeout
 
          // debug:
-         // System.out.println("[UdpListener] Listening on port " + udpPort + " for user " + username);
+         // System.out.println("[UdpListener] Listening on port " + udpPort);
 
          running = true;
          while (running) {

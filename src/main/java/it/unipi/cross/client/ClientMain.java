@@ -1,6 +1,7 @@
 package it.unipi.cross.client;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -40,6 +41,9 @@ public class ClientMain {
          if (tcpClient != null && tcpClient.isAlive()) {
             Request logout = new Request();
             logout.setOperation("logout");
+            Map<String, Object> values = new LinkedHashMap<>();
+            values.put("stopped", 1);
+            logout.setValues(values);
             try {
                tcpClient.sendRequest(logout);
             } catch (IOException e) {
@@ -154,7 +158,7 @@ public class ClientMain {
                      if (!udpStarted) {
                         // create and start UDP listener
                         // udpListener = new UdpListener(udpAddress, udpPort, username);
-                        udpListener = new UdpListener(udpPort, username);
+                        udpListener = new UdpListener(udpPort);
                         Thread udpThread = new Thread(udpListener);
                         udpThread.start();
                         udpStarted = true;

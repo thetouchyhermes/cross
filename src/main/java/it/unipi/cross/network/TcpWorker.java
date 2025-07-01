@@ -151,14 +151,13 @@ public class TcpWorker implements Runnable {
                try {
                   Integer udpPort = request.getAsInteger("udpPort");
                   if (udpPort != null && udpNotifier != null) {
-                        udpNotifier.addClient(username, udpPort);
-                        System.out.println("[Server] Registered UDP notifications for " + username + " at port " + udpPort);
-                  } else  {
+                     udpNotifier.addClient(username, udpPort);
+                  } else {
                      System.out.println("[Server] No port found at login");
                   }
                } catch (Exception e) {
-                  System.err.println("[Server] Warning: Could not register UDP for " + username + 
-                                   ": " + e.getMessage());
+                  System.err.println("[Server] Warning: Could not register UDP for " + username +
+                        ": " + e.getMessage());
                   // Don't fail login if UDP registration fails
                }
             }
@@ -265,9 +264,13 @@ public class TcpWorker implements Runnable {
             return response;
       }
 
-      // test
-      System.out.println("[Server] request from " + socket.getPort() + ":\n" + request.toString());
-      System.out.println("[Server] response to " + socket.getPort() + ":\n" + response.toString());
+      if (!request.getOperation().equals("logout") || request.getAsString("stopped") == null) {
+         System.out.println("[Server] request from " + (!username.isEmpty() ? username : socket.getPort()) + ":");
+         System.out.println(request.toString());
+
+         System.out.println("[Server] response to " + (!username.isEmpty() ? username : socket.getPort()) + ":");
+         System.out.println(response.toString());
+      }
 
       return response;
    }

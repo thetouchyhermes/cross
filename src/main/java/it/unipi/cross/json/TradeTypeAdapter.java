@@ -15,9 +15,11 @@ public class TradeTypeAdapter extends TypeAdapter<Trade> {
    public void write(JsonWriter out, Trade trade) throws IOException {
       out.beginObject();
       out.name("orderId").value(trade.getOrderId());
-      if (trade.getUsername() != null && !trade.getUsername().isEmpty()) {
-         out.name("username").value(trade.getUsername());
-      }
+      /**
+       * if (trade.getUsername() != null && !trade.getUsername().isEmpty()) {
+       * out.name("username").value(trade.getUsername());
+       * }
+       **/
       out.name("type").value(trade.getType() != null ? trade.getType().name() : null);
       out.name("orderType").value(trade.getOrderType() != null ? trade.getOrderType().name() : null);
       out.name("size").value(trade.getSize());
@@ -37,9 +39,11 @@ public class TradeTypeAdapter extends TypeAdapter<Trade> {
             case "orderId":
                trade.setOrderId(in.nextInt());
                break;
-            case "username":
-               trade.setUsername(in.nextString());
-               break;
+            /**
+             * case "username":
+             * trade.setUsername(in.nextString());
+             * break;
+             **/
             case "type":
                // You may need to handle nulls and conversion
                String typeStr = in.nextString();

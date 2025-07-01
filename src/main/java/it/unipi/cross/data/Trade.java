@@ -5,8 +5,6 @@ import java.time.Instant;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import it.unipi.cross.json.TradeTypeAdapter;
-
 public class Trade {
    private int orderId;
    private Type type;
@@ -14,7 +12,6 @@ public class Trade {
    private int size;
    private int price;
    private long timestamp;
-   private String username;
 
    public Trade() {
       this(null, 0, 0);
@@ -31,7 +28,6 @@ public class Trade {
                this.orderType = OrderType.stop;
             }
          }
-         this.username = order.getUsername();
       }
       
       this.size = size;
@@ -87,18 +83,10 @@ public class Trade {
       this.timestamp = timestamp;
    }
 
-   public String getUsername() {
-      return username;
-   }
-
-   public void setUsername(String username) {
-      this.username = username;
-   }
-
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()
-            .registerTypeAdapter(Trade.class, new TradeTypeAdapter())
+            //.registerTypeAdapter(Trade.class, new TradeTypeAdapter())
             .setPrettyPrinting()
             .create();
       return gson.toJson(this);

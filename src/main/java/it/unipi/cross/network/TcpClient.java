@@ -74,7 +74,7 @@ public class TcpClient implements Closeable {
 
                Response response = stringToResponse(line);
                if (line == null) {
-                  // server interrupted ^C
+                  // server interrupted ^C or timeout
                   Prompt.printError("[Client " + socket.getLocalPort() + "] disconnected from server");
                   System.exit(1);
                }
@@ -87,7 +87,7 @@ public class TcpClient implements Closeable {
          } catch (IOException e) {
             if (running) {
                // server killed
-               Prompt.printError("[Client] receiver thread: disconnected from server");
+               Prompt.printError("[Client] disconnected from server");
             }
             System.exit(1);
          }

@@ -11,7 +11,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import it.unipi.cross.data.Order;
-import it.unipi.cross.data.Trade;
 
 /**
  * Utility class for serializing and deserializing Java objects to and from JSON
@@ -25,8 +24,7 @@ public class JsonUtil {
                               new TypeToken<Map<String, Object>>() {
                               }.getType(),
                               new ConditionalMapTypeAdapter(integerKeys))
-                  .registerTypeAdapter(Trade.class,
-                              new TradeTypeAdapter())
+                  // .registerTypeAdapter(Trade.class, new TradeTypeAdapter())
                   .registerTypeAdapter(Order.class, new OrderTypeAdapter())
                   .create();
       private static final Gson prettyGson = new GsonBuilder()
@@ -34,8 +32,7 @@ public class JsonUtil {
                               new TypeToken<Map<String, Object>>() {
                               }.getType(),
                               new ConditionalMapTypeAdapter(integerKeys))
-                  .registerTypeAdapter(Trade.class,
-                              new TradeTypeAdapter())
+                  // .registerTypeAdapter(Trade.class, new TradeTypeAdapter())
                   .registerTypeAdapter(Order.class, new OrderTypeAdapter())
                   .setPrettyPrinting()
                   .create();

@@ -11,10 +11,10 @@ import it.unipi.cross.json.Notification;
 public class TestMain {
    public static void main(String[] args) throws Exception {
       // Start listener first
-      UdpListener listener = new UdpListener(12345, "testuser");
+      UdpListener listener = new UdpListener(12345);
       new Thread(listener).start();
 
-      UdpListener listener2 = new UdpListener(36853, "alice");
+      UdpListener listener2 = new UdpListener(36853);
       new Thread(listener2).start();
 
       // Wait for listener to be ready

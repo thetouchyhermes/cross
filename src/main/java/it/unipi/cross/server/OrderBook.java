@@ -272,7 +272,8 @@ public class OrderBook {
          for (Trade t : trades) {
             System.out.println(t);
             Notification notification = new Notification(t);
-            udpNotifier.notifyClient(t.getUsername(), JsonUtil.toJson(notification));
+            String username = orderMap.get(t.getOrderId()).getUsername();
+            udpNotifier.notifyClient(username, JsonUtil.toJson(notification));
          }
       } catch (IOException e) {
          System.err.println("[UdpNotifier] Error during notification");

@@ -14,19 +14,21 @@ public class UdpNotifier {
    public UdpNotifier() throws IOException {
       this.socket = new DatagramSocket();
       this.clientPorts = new LinkedHashMap<>();
-      System.out.println("[UdpNotifier] UDP notifier is active on port " + socket.getLocalPort());
+      System.out.println("[UdpNotifier] active");
    }
 
    public synchronized void addClient(String username, int clientPort) {
       if (!clientPorts.containsKey(username)) {
          clientPorts.put(username, clientPort);
-         System.out.println("[UdpNotifier] Added client " + username + " at port " + clientPort);
+         // Debug: 
+         // System.out.println("[UdpNotifier] Added " + username + " at port " + clientPort);
       }
    }
 
    public synchronized void removeClient(String username) {
       clientPorts.remove(username);
-      System.out.println("[UdpNotifier] Removed client " + username);
+      // Debug:
+      // System.out.println("[UdpNotifier] Removed client " + username);
    }
 
    // synchronized ???
@@ -51,14 +53,14 @@ public class UdpNotifier {
        **/
 
       socket.send(packet);
-      System.out.println("[UdpNotifier] Sent message to " + username +
+      System.out.println("[UdpNotifier] sent message to " + username +
             " at port " + port);
    }
 
    public void close() {
       if (socket != null && !socket.isClosed()) {
          socket.close();
-         System.out.println("[UdpNotifier] UDP notifier closed");
+         System.out.println("[UdpNotifier] closed");
       }
    }
 
