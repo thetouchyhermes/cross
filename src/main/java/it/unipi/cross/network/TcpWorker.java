@@ -75,7 +75,8 @@ public class TcpWorker implements Runnable {
          if (request != null && request.getOperation().equals("logout")) {
             System.out.println("[Server] disconnected client " + socket.getPort());
          } else {
-            System.out.println("[Server] IOException on " + socket.getPort());
+            // Server interrupted ^C
+            // System.out.println("[Server] IOException on " + socket.getPort());
          }
       } catch (Exception e) {
          System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());

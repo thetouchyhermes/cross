@@ -40,6 +40,16 @@ public class UdpNotifier {
       byte[] data = message.getBytes();
       DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), port);
 
+      /**
+       * try {
+       * // delayed notification to ensure reception of tcp response first
+       * Thread.sleep(0);
+       * } catch (InterruptedException e) {
+       * // server closed
+       * return;
+       * }
+       **/
+
       socket.send(packet);
       System.out.println("[UdpNotifier] Sent message to " + username +
             " at port " + port);
@@ -55,5 +65,5 @@ public class UdpNotifier {
    public int getClients() {
       return clientPorts.size();
    }
-   
+
 }

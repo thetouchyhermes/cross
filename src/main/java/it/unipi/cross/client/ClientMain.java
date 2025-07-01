@@ -31,10 +31,10 @@ public class ClientMain {
 
       // Start client app
       Prompt.printStart();
-      
+
       // Handler function for normal termination, exception and anomalous interruption
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-      
+
          running = false;
 
          if (tcpClient != null && tcpClient.isAlive()) {
@@ -43,6 +43,7 @@ public class ClientMain {
             try {
                tcpClient.sendRequest(logout);
             } catch (IOException e) {
+               // server killed
                Prompt.printError("[ClientMain] server didn't close this socket");
             }
 
@@ -87,15 +88,6 @@ public class ClientMain {
 
          while (running) {
 
-            if (!udpStarted && !username.isEmpty()) {
-               // create and start UDP listener
-               // udpListener = new UdpListener(udpAddress, udpPort, username);
-               udpListener = new UdpListener(udpPort, username);
-               Thread udpThread = new Thread(udpListener);
-               udpThread.start();
-               udpStarted = true;
-            }
-
             Prompt.newLine(username);
             String line = "";
             line = scanner.nextLine();
@@ -137,12 +129,10 @@ public class ClientMain {
                switch (operation) {
                   case "notDefined":
                      System.out.println("Command not defined for this number of args");
-                     Prompt.printHelp(command);
-                     continue;
+                     break;
                   case "invalidArgs":
                      System.out.println("Args not valid");
-                     Prompt.printHelp(command);
-                     continue;
+                     break;
                   case "help":
                      tcpClient.keepServerAlive();
                      if (values == null || values.size() == 0) {
@@ -151,19 +141,33 @@ public class ClientMain {
                      }
                      String com = values.get("command").toString();
                      if (com != null)
-                        Prompt.printHelp(com);
+                        command = com;
+               }
+
+               switch (operation) {
+                  case "notDefined":
+                  case "invalidArgs":
+                  case "help":
+                     Prompt.printHelp(command);
                      continue;
                   case "login":
-                     if (values != null) {
+                     if (!udpStarted) {
+                        // create and start UDP listener
+                        // udpListener = new UdpListener(udpAddress, udpPort, username);
+                        udpListener = new UdpListener(udpPort, username);
+                        Thread udpThread = new Thread(udpListener);
+                        udpThread.start();
+                        udpStarted = true;
+
+                        // send udpPort
+                        udpPort = udpListener.getPort();
                         values.put("udpPort", udpPort);
                      }
                      request.setValues(values);
-                     break;
-                  default:
                }
 
-               // to comment
-               System.out.println(request.toString());
+               // Debug:
+               // System.out.println(request.toString());
                tcpClient.sendRequest(request);
                Response response = tcpClient.receiveResponse();
 
@@ -193,9 +197,6 @@ public class ClientMain {
                               username = "";
                               System.exit(0);
                         }
-                     default:
-                        System.out.println(response.toString());
-                        break;
                   }
                } else if (response instanceof OrderResponse) {
                   OrderResponse orderResponse = (OrderResponse) response;
@@ -208,13 +209,12 @@ public class ClientMain {
                      case -1:
                         if (username.isEmpty()) {
                            System.out.println("User not logged in");
-                           break;
+                           continue;
                         }
-                        System.out.println("Order failed or discarded:\n" + response.toString());
+                        System.out.println("Order failed or discarded:");
                         break;
                      default:
-                        System.out.println("Order placed correctly:\n" + response.toString());
-                        break;
+                        System.out.println("Order placed correctly:");
                   }
                } else if (response instanceof PriceHistory) {
                   PriceHistory priceHistory = (PriceHistory) response;
@@ -223,7 +223,10 @@ public class ClientMain {
                   } else {
                      priceHistory.printDailyStats();
                   }
+                  continue;
                }
+               System.out.println(response.toString());
+               System.out.flush();
             }
          }
       } catch (IOException e) {

@@ -258,7 +258,7 @@ public class OrderBook {
             int fail = insertOrder(market);
             if (fail == -1) {
                // manage market insertion fail after conversion
-               System.err.println("Failed insertion of market order after conversion from stop order. orderId: " + stop.getOrderId());
+               System.err.println("[OrderBook] Failed insertion of market order after conversion from stop order. orderId: " + stop.getOrderId());
             }               
          }
       }
@@ -270,6 +270,7 @@ public class OrderBook {
       }
       try {
          for (Trade t : trades) {
+            System.out.println(t);
             Notification notification = new Notification(t);
             udpNotifier.notifyClient(t.getUsername(), JsonUtil.toJson(notification));
          }

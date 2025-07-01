@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import it.unipi.cross.client.Prompt;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.OrderResponse;
@@ -73,7 +74,8 @@ public class TcpClient implements Closeable {
 
                Response response = stringToResponse(line);
                if (line == null) {
-                  System.out.println("[Client " + socket.getLocalPort() + "] disconnected from server");
+                  // server interrupted ^C
+                  Prompt.printError("[Client " + socket.getLocalPort() + "] disconnected from server");
                   System.exit(1);
                }
 
@@ -84,7 +86,8 @@ public class TcpClient implements Closeable {
             }
          } catch (IOException e) {
             if (running) {
-               System.err.println("[Client] receiver thread: disconnected from server");
+               // server killed
+               Prompt.printError("[Client] receiver thread: disconnected from server");
             }
             System.exit(1);
          }

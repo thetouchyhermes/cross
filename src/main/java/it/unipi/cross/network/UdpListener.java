@@ -4,19 +4,21 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.List;
 
+import it.unipi.cross.client.Prompt;
 import it.unipi.cross.data.Trade;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.Notification;
 
 public class UdpListener implements Runnable {
-   private final int udpPort;
+   private int udpPort;
    private final String username;
 
    private DatagramSocket socket;
-   private volatile boolean running = true;
+   private volatile boolean running = false;
 
    public UdpListener(int udpPort, String username) {
       this.udpPort = udpPort;
@@ -26,25 +28,41 @@ public class UdpListener implements Runnable {
    @Override
    public void run() {
       try {
-         // Create DatagramSocket bound to specific port for receiving unicast messages
-         socket = new DatagramSocket(udpPort, InetAddress.getLocalHost());
+         //// Create DatagramSocket bound to available port for receiving unicast messages
+         for (int port = udpPort; port < udpPort + 50; port++) {
+            try {
+               socket = new DatagramSocket(port, InetAddress.getLocalHost());
+               udpPort = port;
+               break;
+            } catch (SocketException e) {
+               // Debug: 
+               // System.out.println("Port " + port + " already in use");
+            }
+         }
+
+         if (socket == null || !socket.isBound()) {
+            Prompt.printError("[UdpListener] Could not find an available port");
+            return;
+         }
          // socket.setSoTimeout(5000); // 5 second timeout
 
-         System.out.println("[UdpListener] Listening on port " + udpPort + " for user " + username);
+         // debug:
+         // System.out.println("[UdpListener] Listening on port " + udpPort + " for user " + username);
 
+         running = true;
          while (running) {
             String message = pullMessage(socket);
             if (message != null && !message.isEmpty()) {
                List<Trade> trades = pullTrades(message);
                if (!trades.isEmpty()) {
-                  System.out.println(new Notification(trades).toString());
+                  System.out.println("\n" + new Notification(trades).toString() + "\n");
                }
             }
          }
 
       } catch (IOException e) {
          if (running) {
-            System.err.println("[UdpListener] " + e.getClass() + ": " + e.getMessage());
+            Prompt.printError("[UdpListener] " + e.getClass() + ": " + e.getMessage());
          }
       } finally {
          if (socket != null && !socket.isClosed()) {
@@ -81,7 +99,16 @@ public class UdpListener implements Runnable {
       }
    }
 
-   public int getLocalPort() {
-      return socket != null ? socket.getLocalPort() : -1;
+   public int getPort() {
+      // wait for udpListener to be ready
+      while(!running) {
+         try {
+            Thread.sleep(200);
+         } catch (InterruptedException e) {
+            // client closed
+            return -1;
+         }
+      }
+      return udpPort;
    }
 }

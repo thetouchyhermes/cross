@@ -4,8 +4,10 @@ public class Prompt {
 
    // ANSI codes for colors
    public static final String RESET = "\033[0m";
-   public static final String GREEN = "\033[0;32m";
    public static final String RED = "\033[0;31m";
+   public static final String GREEN = "\033[0;32m";
+   public static final String YELLOW = "\033[0;33m";
+   public static final String BLUE = "\033[0;36m";
 
    public static void printStart() {
       System.out.print(GREEN + "CROSS" + RESET
@@ -44,66 +46,56 @@ public class Prompt {
    }
 
    public static void printHelp(String command) {
+      System.out.print("\nUsage: \n\t");
       switch (command) {
          case "register":
-            System.out.print("\nUsage: \n\t"
-                  + "register(username, password) \n"
+            System.out.print("register(username, password) \n"
                   + "\t\tmust not be logged \n"
                   + "\t\tusername must be unique\n\n");
             break;
          case "updateCredentials":
-            System.out.print("\nUsage: \n\t"
-                  + "updateCredentials(username, currentPassword, newPassword) \n"
+            System.out.print("updateCredentials(username, currentPassword, newPassword) \n"
                   + "\t\tmust not be logged \n"
                   + "\t\tnew password can't be equal to the last one\n\n");
             break;
          case "login":
-            System.out.print("\nUsage: \n\t"
-                  + "login(username, password) \n"
+            System.out.print("login(username, password) \n"
                   + "\t\tmust not be logged\n\n");
             break;
          case "logout":
-            System.out.print("\nUsage: \n\t"
-                  + "logout() \n"
+            System.out.print("logout() \n"
                   + "\t\tlogs out and stops the program\n\n");
             break;
          case "insertLimitOrder":
-            System.out.print("\nUsage: \n\t"
-                  + "insertLimitOrder(type, size, limitPrice) \n"
+            System.out.print("insertLimitOrder(type, size, limitPrice) \n"
                   + "\t\ttype must be \"ask\" or \"bid\"\n\n"
                   + "\t\tsize and limitPrice must be integer\n");
             break;
          case "insertMarketOrder":
-            System.out.print("\nUsage: \n\t"
-                  + "insertMarketOrder(type, size) \n"
+            System.out.print("insertMarketOrder(type, size) \n"
                   + "\t\ttype must be \"ask\" or \"bid\"\n\n"
                   + "\t\tsize must be integer\n");
             break;
          case "insertStopOrder":
-            System.out.print("\nUsage: \n\t"
-                  + "insertStopOrder(type, size, stopPrice) \n"
+            System.out.print("insertStopOrder(type, size, stopPrice) \n"
                   + "\t\ttype must be \"ask\" or \"bid\"\n\n"
                   + "\t\tsize and stopPrice must be integer\n");
             break;
          case "cancelOrder":
-            System.out.print("\nUsage: \n\t"
-                  + "cancelOrder(orderID) \n"
+            System.out.print("cancelOrder(orderID) \n"
                   + "\t\torder must not have already been fulfilled\n\n"
                   + "\t\torderID must be integer\n");
             break;
          case "getPriceHistory":
-            System.out.print("\nUsage: \n\t"
-                  + "getPriceHistory(month) \n"
+            System.out.print("getPriceHistory(month) \n"
                   + "\t\tmonth must be of format \"MMYYYY\"\n\n");
             break;
          case "help":
-            System.out.print("\nUsage: \n\t"
-                  + "help() \n"
+            System.out.print("help() \n"
                   + "\t\tprints this page\n\n");
             break;
          case "exit":
-            System.out.print("\nUsage: \n\t"
-                  + "exit() \n"
+            System.out.print("exit() \n"
                   + "\t\tstops the program\n\n");
             break;
          default:
