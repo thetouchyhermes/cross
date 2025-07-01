@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,7 +28,7 @@ public class UdpListener implements Runnable {
       try {
          // Create DatagramSocket bound to specific port for receiving unicast messages
          socket = new DatagramSocket(udpPort, InetAddress.getLocalHost());
-         socket.setSoTimeout(5000); // 5 second timeout
+         // socket.setSoTimeout(5000); // 5 second timeout
 
          System.out.println("[UdpListener] Listening on port " + udpPort + " for user " + username);
 
@@ -55,33 +54,23 @@ public class UdpListener implements Runnable {
    }
 
    private String pullMessage(DatagramSocket socket) throws IOException {
-      try {
-         byte[] buf = new byte[1024];
+      byte[] buf = new byte[1024];
          DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
          socket.receive(packet);
 
          String message = new String(packet.getData(), 0, packet.getLength());
          return message;
-
-      } catch (SocketTimeoutException e) {
-         // Timeout is expected for graceful shutdown checking
-         return null;
-      }
    }
 
    private List<Trade> pullTrades(String message) {
       Notification notification = JsonUtil.fromJson(message, Notification.class);
 
-      List<Trade> trades = new LinkedList<>();
-      if (notification != null) {
-         for (Trade trade : notification.getTrades()) {
-            if (trade.getUsername().equals(username)) {
-               trade.setUsername("");
-               trades.add(trade);
-            }
-         }
+      if (notification == null) {
+         return new LinkedList<>();
       }
+
+      List<Trade> trades = new LinkedList<>(notification.getTrades());
       return trades;
    }
 

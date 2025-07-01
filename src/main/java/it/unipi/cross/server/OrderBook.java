@@ -265,9 +265,14 @@ public class OrderBook {
    }
 
    public void notify(List<Trade> trades) {
-      Notification notification = new Notification(trades);
+      if (trades.isEmpty()) {
+         return;
+      }
       try {
-         udpNotifier.notify(JsonUtil.toJson(notification));
+         for (Trade t : trades) {
+            Notification notification = new Notification(t);
+            udpNotifier.notifyClient(t.getUsername(), JsonUtil.toJson(notification));
+         }
       } catch (IOException e) {
          System.err.println("[UdpNotifier] Error during notification");
       }

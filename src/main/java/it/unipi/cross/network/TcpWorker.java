@@ -145,15 +145,17 @@ public class TcpWorker implements Runnable {
                   request.getAsString("username"),
                   request.getAsString("password"));
 
+            System.out.println("ciao pre udp port");
             if (messageResponse.getResponse() == 100) {
                username = request.getAsString("username");
                // Automatically register client for UDP notifications if udpPort is provided
                try {
                   Integer udpPort = request.getAsInteger("udpPort");
+                  System.out.println("ciao post integer port");
                   if (udpPort != null && udpNotifier != null) {
                         udpNotifier.addClient(username, udpPort);
-                        System.out.println("[Server] Registered UDP notifications for " + username + 
-                                         " at port " + udpPort);
+                        System.out.println("ciao post add client");
+                        System.out.println("[Server] Registered UDP notifications for " + username + " at port " + udpPort);
                   }
                } catch (Exception e) {
                   System.err.println("[Server] Warning: Could not register UDP for " + username + 

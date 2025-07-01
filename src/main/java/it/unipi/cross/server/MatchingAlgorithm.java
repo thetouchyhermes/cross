@@ -8,8 +8,8 @@ import java.util.NavigableSet;
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
-import it.unipi.cross.data.Type;
 import it.unipi.cross.data.Trade;
+import it.unipi.cross.data.Type;
 
 public class MatchingAlgorithm {
 

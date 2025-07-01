@@ -16,6 +16,11 @@ public class Notification {
       this.trades = new LinkedList<>(trades);
    }
 
+   public Notification(Trade trade) {
+      this.trades = new LinkedList<>();
+      this.trades.add(trade);
+   }
+
    public String getNotification() {
       return notification;
    }
