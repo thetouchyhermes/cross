@@ -18,21 +18,22 @@ import it.unipi.cross.json.OrderResponse;
 public class UdpListener implements Runnable {
    private int udpPort;
    private String username;
-
+   private TcpClient tcpClient;
+   
    private DatagramSocket socket;
    private volatile boolean running = false;
    private volatile boolean logged = false;
 
-   public UdpListener(int udpPort, String username) {
+   public UdpListener(int udpPort, String username, TcpClient tcpClient) {
       this.udpPort = udpPort;
       this.username = username;
+      this.tcpClient = tcpClient;
    }
 
    @Override
    public void run() {
       try {
-         //// Create DatagramSocket bound to available port for receiving unicast
-         //// messages
+         // Create DatagramSocket bound to available port for receiving unicast messages
          for (int port = udpPort; port < udpPort + 50; port++) {
             try {
                socket = new DatagramSocket(port, InetAddress.getLocalHost());
@@ -48,7 +49,6 @@ public class UdpListener implements Runnable {
             Prompt.printError("[UdpListener] Could not find an available port");
             return;
          }
-         // socket.setSoTimeout(5000); // 5 second timeout
 
          running = true;
 
@@ -69,14 +69,17 @@ public class UdpListener implements Runnable {
 
                if (trades == null || trades.isEmpty()) {
                   OrderResponse orderResponse = pullOrderResponse(message);
+
+                  // notify stop order converted to market failed
                   if (orderResponse != null) {
                      System.out.println("\nFailed stop order (id: " + orderResponse.getOrderId() + ")");
                      System.out.println(new OrderResponse(-1).toString() + "\n");
+
+                     // decrement pending stop orders pin count
+                     tcpClient.unsetPinCount();
                   }
                } else {
-                  if (username.equals(trades.get(0).getUsername())) {
-                     System.out.println("\n" + new Notification(trades).toString() + "\n");
-                  }
+                  System.out.println("\n" + new Notification(trades).toString() + "\n");
                }
 
                Prompt.newLine(username);
@@ -88,6 +91,7 @@ public class UdpListener implements Runnable {
             Prompt.printError("[UdpListener] " + e.getClass() + ": " + e.getMessage());
          }
       } catch (InterruptedException e) {
+
          // shutdown during login wait
       } finally {
          if (socket != null && !socket.isClosed()) {
@@ -106,6 +110,7 @@ public class UdpListener implements Runnable {
       return message;
    }
 
+   // try to convert udp message to trade completion notification
    private List<Trade> pullTrades(String message) {
       try {
          Notification notification = JsonUtil.fromJson(message, Notification.class);
@@ -116,6 +121,7 @@ public class UdpListener implements Runnable {
       }
    }
 
+   // try to convert udp message to failed stop order response
    private OrderResponse pullOrderResponse(String message) {
       try {
          OrderResponse orderResponse = JsonUtil.fromJson(message, OrderResponse.class);
@@ -126,6 +132,7 @@ public class UdpListener implements Runnable {
       }
    }
 
+   // shutdown socket and listener
    public void shutdown() {
       running = false;
       if (socket != null && !socket.isClosed()) {

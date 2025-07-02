@@ -25,6 +25,7 @@ public class TcpServer {
 
    private volatile boolean running = false;
 
+   /** Server class containing all TCP management on server-side **/
    public TcpServer(OrderBook orderBook, UserBook userBook, UdpNotifier udpNotifier, int tcpPort, int timeout) {
       this.orderBook = orderBook;
       this.userBook = userBook;
@@ -51,11 +52,14 @@ public class TcpServer {
          while (running) {
             try {
                Socket socket = serverSocket.accept();
-               socket.setSoTimeout(timeout);
-               synchronized (activeSockets) {
-                  activeSockets.add(socket);
-               }
 
+               // set timeout for client sockets
+               socket.setSoTimeout(timeout);
+
+               // add socket to list
+               activeSockets.add(socket);
+
+               // start socket in a worker thread
                TcpWorker worker = new TcpWorker(socket, orderBook, userBook, udpNotifier);
                threadPool.submit(worker, activeSockets);
             } catch (IOException e) {
@@ -66,28 +70,30 @@ public class TcpServer {
             }
          }
       } finally {
-         // ...
+         // nothing to add
       }
    }
 
    public void stop() {
       running = false;
       try {
+         // check if server is closed
          if (serverSocket != null && !serverSocket.isClosed()) {
             serverSocket.close();
          }
+
+         // try and shutdown threadpool and each individual client socket
          threadPool.shutdownNow();
-         synchronized (activeSockets) {
-            for (Socket s : activeSockets) {
-               if (s != null && !s.isClosed()) {
-                  s.close();
-                  System.out.println("[Server] stopped client " + s.getPort());
-               }
+         for (Socket s : activeSockets) {
+            if (s != null && !s.isClosed()) {
+               s.close();
+               System.out.println("[Server] stopped client " + s.getPort());
             }
-            activeSockets.clear();
          }
+         activeSockets.clear();
 
          try {
+            // should not be reached
             if (!threadPool.awaitTermination(10, TimeUnit.SECONDS)) {
                System.err.println("[Server] executor did not terminate in the specified time.");
             }
@@ -95,13 +101,11 @@ public class TcpServer {
             Thread.currentThread().interrupt();
          }
       } catch (IOException e) {
+         // should not be reached
          System.err.println("[Server] error closing server socket");
-         // ignore
       }
-      shutdown();
-   }
 
-   public void shutdown() {
+      // try shutdown again
       if (threadPool != null && !threadPool.isShutdown()) {
          threadPool.shutdownNow();
       }

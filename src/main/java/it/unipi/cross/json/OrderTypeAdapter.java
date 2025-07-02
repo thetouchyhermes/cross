@@ -16,11 +16,16 @@ import it.unipi.cross.data.Order;
 import it.unipi.cross.data.OrderType;
 import it.unipi.cross.data.StopOrder;
 
+/**
+ * Utility used to serialize and deserialize Orders in JSON contexts,
+ * descerning each type of order from the others and deserializing the right
+ * fields for each one
+ **/
 public class OrderTypeAdapter implements JsonSerializer<Order>, JsonDeserializer<Order> {
 
    @Override
    public JsonElement serialize(Order order, Type type, JsonSerializationContext context) {
-      // Just serialize normally - the orderType field is already there
+      // normal serialization
       return context.serialize(order, order.getClass());
    }
 

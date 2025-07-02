@@ -11,17 +11,23 @@ import it.unipi.cross.json.Request;
 
 public class RequestFactory {
 
+   /** Returns formatted Json Request, given an input command as a string **/
    public static Request create(String line) {
 
-      int parIdx1 = line.indexOf('(');
-      int parIdx2 = line.lastIndexOf(')');
+      int bracketIdx1 = line.indexOf('(');
+      int bracketIdx2 = line.lastIndexOf(')');
 
-      String command = line.substring(0, parIdx1).trim();
-      String[] params = line.substring(parIdx1 + 1, parIdx2).split(",");
+      // get command without params
+      String command = line.substring(0, bracketIdx1).trim();
+      // get params as an array without command or brackets
+      String[] params = line.substring(bracketIdx1 + 1, bracketIdx2).split(",");
 
       List<String> paramList = new ArrayList<>(Arrays.asList(params));
+
+      // remove all whitespaces from params
       paramList.replaceAll(str -> str.trim());
 
+      // Debug:
       // System.out.println(command + " (" + String.join(", ", paramList) + ")");
 
       Request request = new Request();
@@ -30,6 +36,7 @@ public class RequestFactory {
       request.setOperation(command);
       request.setValues(values);
 
+      // flag for empty parameters
       boolean emptyParam = false;
       for (String str : paramList) {
          if (str.isBlank()) {
@@ -37,6 +44,8 @@ public class RequestFactory {
             break;
          }
       }
+
+      // if there is an empty parameter, it must be one of these commands
       if (emptyParam) {
          switch (command) {
             case "logout":
@@ -60,20 +69,20 @@ public class RequestFactory {
                   request.setOperation("notDefined");
                   break;
                }
-
                values.put("username", paramList.get(0));
                values.put("password", paramList.get(1));
                break;
+
             case "updateCredentials":
                if (paramList.size() != 3) {
                   request.setOperation("notDefined");
                   break;
                }
-
                values.put("username", paramList.get(0));
                values.put("old_password", paramList.get(1));
                values.put("new_password", paramList.get(2));
                break;
+
             case "insertLimitOrder":
             case "insertStopOrder":
                if (paramList.size() != 3) {
@@ -84,15 +93,16 @@ public class RequestFactory {
                size = Integer.parseInt(paramList.get(1));
                price = Integer.parseInt(paramList.get(2));
                type = paramList.get(0).toLowerCase();
+               // check of strict parameters (lowercase type, non-negative integers)
                if (!type.equals("ask") && !type.equals("bid") || size < 0 || price < 0) {
                   request.setOperation("invalidArgs");
                   break;
                }
-
                values.put("type", type);
                values.put("size", size);
                values.put("price", price);
                break;
+
             case "insertMarketOrder":
                if (paramList.size() != 2) {
                   request.setOperation("notDefined");
@@ -101,14 +111,15 @@ public class RequestFactory {
 
                size = Integer.parseInt(paramList.get(1));
                type = paramList.get(0).toLowerCase();
+               // check of strict parameters (lowercase type, non-negative integer)
                if (!type.equals("ask") && !type.equals("bid") || size < 0) {
                   request.setOperation("invalidArgs");
                   break;
                }
-
                values.put("type", type);
                values.put("size", size);
                break;
+
             case "cancelOrder":
                if (paramList.size() != 1) {
                   request.setOperation("notDefined");
@@ -120,48 +131,53 @@ public class RequestFactory {
                   request.setOperation("invalidArgs");
                   break;
                }
-
                values.put("orderId", orderId);
                break;
+
             case "getPriceHistory":
                if (paramList.size() != 1) {
                   request.setOperation("notDefined");
                   break;
                }
 
+               // check of strict parameters (formatting of month and year from string)
                String monthString = paramList.get(0);
                int month = Integer.parseInt(monthString);
                if (month < 10000 || month > 129999) {
                   request.setOperation("invalidArgs");
                   break;
                }
-               int monthNum = Integer.parseInt(monthString.substring(0,2));
+               int monthNum = Integer.parseInt(monthString.substring(0, 2));
                int yearNum = Integer.parseInt(monthString.substring(2));
                if (monthNum < 1 || monthNum > 12 || yearNum < 1970 || yearNum > Year.now().getValue()) {
                   request.setOperation("invalidArgs");
                   break;
                }
-
                values.put("month", monthString);
                break;
+
             case "help":
                if (paramList.size() > 1) {
                   request.setOperation("notDefined");
                   break;
                }
+
                String com = paramList.get(0);
                if (!com.isEmpty())
                   values.put("command", com);
                break;
+
             case "logout":
             case "exit":
                if (paramList.size() != 1 || !paramList.get(0).isEmpty()) {
                   request.setOperation("notDefined");
                }
                break;
+
             default:
                request.setOperation("notDefined");
          }
+
       } catch (NumberFormatException e) {
          request.setOperation("invalidArgs");
       } catch (IllegalArgumentException e) {

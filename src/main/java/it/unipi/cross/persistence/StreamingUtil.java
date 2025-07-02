@@ -23,6 +23,10 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.stream.JsonReader;
 
+/**
+ * Utility to read and write between big files of JSON format and app, files are
+ * never overwritten but instead new objects are added at the end
+ **/
 public class StreamingUtil {
 
    public static <T> T readLastObject(File file, Type type) throws IOException {
@@ -97,7 +101,7 @@ public class StreamingUtil {
       if (!file.exists()) {
          file.createNewFile();
       }
-      
+
       Map<String, List<T>> wrapperObj = new HashMap<>();
       wrapperObj.put(arrayName, new ArrayList<>());
       JsonObject jsonWrapper = new Gson().toJsonTree(wrapperObj).getAsJsonObject();
@@ -141,7 +145,7 @@ public class StreamingUtil {
 
                         String indentedLine = "      " + jsonObj.replace("\n", "\n      ");
                         writer.write(indentedLine);
-                        
+
                         if (i < objList.size() - 1) {
                            writer.write(",");
                         }

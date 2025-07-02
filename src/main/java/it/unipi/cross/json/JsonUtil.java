@@ -98,7 +98,8 @@ public class JsonUtil {
             return readFromFile(file, type, true);
       }
 
-      public static <T> List<T> readListFromFile(File file, Class<T> classOfT, boolean prettyPrinted) throws IOException {
+      public static <T> List<T> readListFromFile(File file, Class<T> classOfT, boolean prettyPrinted)
+                  throws IOException {
             return readFromFile(file, TypeToken.getParameterized(List.class, classOfT).getType(), prettyPrinted);
       }
 

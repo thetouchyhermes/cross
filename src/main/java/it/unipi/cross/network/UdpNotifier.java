@@ -20,8 +20,9 @@ public class UdpNotifier {
    public synchronized void addClient(String username, int clientPort) {
       if (!clientPorts.containsKey(username)) {
          clientPorts.put(username, clientPort);
-         // Debug: 
-         // System.out.println("[UdpNotifier] Added " + username + " at port " + clientPort);
+         // Debug:
+         // System.out.println("[UdpNotifier] Added " + username + " at port " +
+         // clientPort);
       }
    }
 
@@ -31,8 +32,7 @@ public class UdpNotifier {
       // System.out.println("[UdpNotifier] Removed client " + username);
    }
 
-   // synchronized ???
-   public synchronized void notifyClient(String username, String message) throws IOException {
+   public void notifyClient(String username, String message) {
       if (!clientPorts.containsKey(username) || clientPorts.get(username) == null) {
          // client not connected
          return;
@@ -40,19 +40,24 @@ public class UdpNotifier {
 
       Integer port = clientPorts.get(username);
       byte[] data = message.getBytes();
-      DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), port);
 
-      /**
-       * try {
-       * // delayed notification to ensure reception of tcp response first
-       * Thread.sleep(0);
-       * } catch (InterruptedException e) {
-       * // server closed
-       * return;
-       * }
-       **/
+      // send message through UDP with a short wait to make the TCP response arrive
+      // first
+      Thread notifyThread = new Thread(() -> {
+         try {
+            DatagramPacket packet = new DatagramPacket(data, data.length, InetAddress.getLocalHost(), port);
+            Thread.sleep(500);
 
-      socket.send(packet);
+            socket.send(packet);
+         } catch (IOException e) {
+            System.err.println("[UdpNotifier] Error during notification");
+         } catch (Exception e) {
+            // server was closed
+         }
+      });
+      notifyThread.setDaemon(true);
+      notifyThread.start();
+
       System.out.println("[UdpNotifier] sent message to " + username +
             " at port " + port);
    }
@@ -62,10 +67,6 @@ public class UdpNotifier {
          socket.close();
          System.out.println("[UdpNotifier] closed");
       }
-   }
-
-   public int getClients() {
-      return clientPorts.size();
    }
 
 }

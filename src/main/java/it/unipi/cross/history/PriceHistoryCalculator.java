@@ -20,6 +20,7 @@ import it.unipi.cross.data.Trade;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.PriceHistory;
 
+/** Used to calculate from the current Trades file, all the stats from a given month **/
 public class PriceHistoryCalculator {
 
    private TradeHistory tradeHistory;
@@ -29,6 +30,8 @@ public class PriceHistoryCalculator {
       config.loadServer();
 
       File tradeFile = new File(config.getString("persistence.trade_file"));
+
+      // read all trades from JSON to class
       if (tradeFile != null && tradeFile.exists()) {
          this.tradeHistory = JsonUtil.readFromFile(tradeFile, TradeHistory.class);
       } else {
