@@ -1,6 +1,7 @@
 package it.unipi.cross.json;
 
-public class OrderResponse extends Response{
+/** Represents a response object for orderbook commands, returns order id **/
+public class OrderResponse extends Response {
    private int orderId;
 
    public OrderResponse(int orderId) {

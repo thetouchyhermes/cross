@@ -8,34 +8,13 @@ import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
 import it.unipi.cross.data.Type;
 
+/**
+ * Static algorithm that attempts at matching a given order against limit orders
+ * from
+ * the opposite side of the order book (from other users)
+ **/
 public class MatchingAlgorithm {
 
-   /**
-    * Attempts to match a given market order against the opposite side of the order
-    * book.
-    * The method iterates through the opposite book's limit orders, executing
-    * trades until
-    * the market order is fully matched or no more suitable limit orders are
-    * available.
-    *
-    * <p>
-    * For each match:
-    * <ul>
-    * <li>Skips orders from the same user as the market order.</li>
-    * <li>Executes trades for the minimum available size between the market order
-    * and the limit order.</li>
-    * <li>Notifies both parties of the trade (notification logic to be
-    * implemented).</li>
-    * <li>Updates the sizes of both orders and removes fully filled limit orders
-    * from the book and order map.</li>
-    * </ul>
-    * After processing, the market order is removed from the order map.
-    *
-    * @param orderBook the order book containing current limit orders
-    * @param market    the market order to be matched
-    * @return {@code true} if the market order was fully matched; {@code false}
-    *         otherwise
-    */
    public static boolean matchMarketOrder(OrderBook orderBook, MarketOrder market) {
 
       Type type = market.getType();
@@ -57,6 +36,7 @@ public class MatchingAlgorithm {
       }
 
       if (marketSize == 0) {
+
          // create the real trades because market order didn't fail
          Iterator<LimitOrder> rmIter = oppositeBook.iterator();
          boolean changedBest = false;
@@ -66,13 +46,14 @@ public class MatchingAlgorithm {
 
             if (market.getUsername().equals(bookOrder.getUsername()))
                continue;
-            
+
             int tradeSize = Math.min(market.getSize(), bookOrder.getSize());
             int tradePrice = bookOrder.getPrice();
 
-            // signal order completion to the order book for insertion of trade and notification
+            // signal order completion to the order book for insertion of trade and
+            // notification
             orderBook.insertTrade(market, bookOrder, tradeSize, tradePrice);
-            
+
             market.setSize(market.getSize() - tradeSize);
             bookOrder.setSize(bookOrder.getSize() - tradeSize);
 
@@ -94,25 +75,6 @@ public class MatchingAlgorithm {
       }
    }
 
-   /**
-    * Attempts to match a given limit order against the opposite side of the order
-    * book.
-    * <p>
-    * For a bid order, matches against the ask book; for an ask order, matches
-    * against the bid book.
-    * The method iterates through the opposite book and executes trades when price
-    * and size conditions are met.
-    * Orders from the same user are skipped. Trades are executed at the price of
-    * the resting order in the book.
-    * Both the incoming limit order and matched book orders are updated or removed
-    * as their sizes are reduced to zero.
-    * 
-    * @param orderBook the order book containing bid and ask books and order
-    *                  mappings
-    * @param limit     the incoming limit order to be matched
-    * @return {@code true} if the limit order was fully matched and completed,
-    *         {@code false} otherwise
-    */
    public static boolean matchLimitOrder(OrderBook orderBook, LimitOrder limit) {
 
       Type type = limit.getType();
@@ -157,19 +119,6 @@ public class MatchingAlgorithm {
       return completed;
    }
 
-   /**
-    * Attempts to match and execute a stop order against the current order book.
-    * <p>
-    * If the stop order's trigger price is reached or surpassed by the best available price
-    * in the order book (best ask for buy stops, best bid for sell stops), the stop order is
-    * converted into a market order and inserted into the order book for execution.
-    * </p>
-    *
-    * @param orderBook the order book containing current orders and prices
-    * @param stop the stop order to be matched and potentially executed
-    * @return {@code true} if the stop order was converted to market order,
-    *         {@code false} otherwise
-    */
    public static boolean matchStopOrder(OrderBook orderBook, StopOrder stop) {
 
       Type type = stop.getType();
@@ -190,7 +139,7 @@ public class MatchingAlgorithm {
          if (bestBookPrice != -1 && bestBookPrice <= stopPrice)
             execute = true;
       }
-      
+
       return execute;
 
    }

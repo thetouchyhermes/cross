@@ -1,5 +1,6 @@
 package it.unipi.cross.history;
 
+/** Represents a day entry on the PriceHistory list**/
 public class DailyStats {
    private String day;
    private int openingPrice;

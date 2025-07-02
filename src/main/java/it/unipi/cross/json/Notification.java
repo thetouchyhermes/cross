@@ -8,6 +8,10 @@ import com.google.gson.GsonBuilder;
 
 import it.unipi.cross.data.Trade;
 
+/**
+ * Represents an UDP notification as a list of trades with the name
+ * 'closedTrades'
+ */
 public class Notification {
    private final String notification = "closedTrades";
    private final List<Trade> trades;
@@ -36,5 +40,5 @@ public class Notification {
             .create();
       return gson.toJson(this);
    }
-   
+
 }

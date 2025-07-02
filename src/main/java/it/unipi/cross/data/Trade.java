@@ -5,6 +5,7 @@ import java.time.Instant;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/** Represents a completed and finalized order in the trading system **/
 public class Trade {
    private int orderId;
    private Type type;
@@ -12,6 +13,7 @@ public class Trade {
    private int size;
    private int price;
    private long timestamp;
+   // username is used for udp notification on server side, but is not serialized
    private transient String username;
 
    public Trade() {
@@ -25,7 +27,9 @@ public class Trade {
          this.orderType = order.getOrderType();
          if (orderType == OrderType.market) {
             MarketOrder market = (MarketOrder) order;
+
             if (market.isFromStopOrder()) {
+               // resets type to stop if it was a converted stop order
                this.orderType = OrderType.stop;
             }
          }
@@ -96,7 +100,6 @@ public class Trade {
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()
-            //.registerTypeAdapter(Trade.class, new TradeTypeAdapter())
             .setPrettyPrinting()
             .create();
       return gson.toJson(this);

@@ -7,6 +7,7 @@ import com.google.gson.GsonBuilder;
 
 import it.unipi.cross.data.Trade;
 
+/** Represents a list of trades **/
 public class TradeHistory {
    private List<Trade> trades;
 
