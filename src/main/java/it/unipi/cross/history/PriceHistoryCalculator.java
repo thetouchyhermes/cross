@@ -22,17 +22,15 @@ import it.unipi.cross.json.PriceHistory;
 
 public class PriceHistoryCalculator {
 
-   private File historyFile;
    private TradeHistory tradeHistory;
 
    public PriceHistoryCalculator() throws IOException {
       ConfigReader config = new ConfigReader();
       config.loadServer();
-      String historyFilePath = config.getString("history.file");
-      historyFile = new File(historyFilePath);
 
-      if (historyFile != null) {
-         this.tradeHistory = JsonUtil.readFromFile(historyFile, TradeHistory.class);
+      File tradeFile = new File(config.getString("persistence.trade_file"));
+      if (tradeFile != null && tradeFile.exists()) {
+         this.tradeHistory = JsonUtil.readFromFile(tradeFile, TradeHistory.class);
       } else {
          throw new IOException("History file not available");
       }

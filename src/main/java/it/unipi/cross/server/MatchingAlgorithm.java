@@ -1,14 +1,11 @@
 package it.unipi.cross.server;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.NavigableSet;
 
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
-import it.unipi.cross.data.Trade;
 import it.unipi.cross.data.Type;
 
 public class MatchingAlgorithm {
@@ -73,11 +70,8 @@ public class MatchingAlgorithm {
             int tradeSize = Math.min(market.getSize(), bookOrder.getSize());
             int tradePrice = bookOrder.getPrice();
 
-            // notify trade for both orders on the tradeSize and tradePrice
-            List<Trade> trades = new LinkedList<>();
-            trades.add(new Trade(bookOrder, tradeSize, tradePrice));
-            trades.add(new Trade(market, tradeSize, tradePrice));
-            orderBook.notify(trades);
+            // signal order completion to the order book for insertion of trade and notification
+            orderBook.insertTrade(market, bookOrder, tradeSize, tradePrice);
             
             market.setSize(market.getSize() - tradeSize);
             bookOrder.setSize(bookOrder.getSize() - tradeSize);
@@ -142,11 +136,9 @@ public class MatchingAlgorithm {
 
          int tradePrice = bookOrder.getPrice();
 
-         // notify trade for both orders on the tradeSize and tradePrice
-         List<Trade> trades = new LinkedList<>();
-         trades.add(new Trade(bookOrder, tradeSize, tradePrice));
-         trades.add(new Trade(limit, tradeSize, tradePrice));
-         orderBook.notify(trades);
+         // signal order completion to the order book for insertion of trade and
+         // notification
+         orderBook.insertTrade(limit, bookOrder, tradeSize, tradePrice);
 
          bookOrder.setSize(bookOrder.getSize() - tradeSize);
          limit.setSize(limit.getSize() - tradeSize);
@@ -188,15 +180,17 @@ public class MatchingAlgorithm {
       if (type == Type.bid) {
          // highest price a buyer can afford
          bestBookPrice = orderBook.getBestAskPrice();
+
          if (bestBookPrice != -1 && bestBookPrice >= stopPrice)
             execute = true;
       } else if (type == Type.ask) {
          // lowest price a seller can afford
          bestBookPrice = orderBook.getBestBidPrice();
+
          if (bestBookPrice != -1 && bestBookPrice <= stopPrice)
             execute = true;
       }
-
+      
       return execute;
 
    }

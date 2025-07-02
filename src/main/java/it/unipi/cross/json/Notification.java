@@ -32,7 +32,6 @@ public class Notification {
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()
-            .registerTypeAdapter(Trade.class, new TradeTypeAdapter())
             .setPrettyPrinting()
             .create();
       return gson.toJson(this);

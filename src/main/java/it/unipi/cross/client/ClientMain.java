@@ -23,7 +23,7 @@ public class ClientMain {
    private static UdpListener udpListener;
    private static boolean udpStarted = false;
    private static String username = "";
-   private static volatile boolean running = true;
+   private static volatile boolean running = false;
 
    public static void main(String[] args) {
 
@@ -90,6 +90,7 @@ public class ClientMain {
 
       try (Scanner scanner = new Scanner(System.in)) {
 
+         running = true;
          while (running) {
 
             Prompt.newLine(username);
@@ -155,10 +156,10 @@ public class ClientMain {
                      Prompt.printHelp(command);
                      continue;
                   case "login":
-                     if (!udpStarted) {
+                     if (username.isEmpty() && !udpStarted) {
                         // create and start UDP listener
                         // udpListener = new UdpListener(udpAddress, udpPort, username);
-                        udpListener = new UdpListener(udpPort);
+                        udpListener = new UdpListener(udpPort, request.getAsString("username"));
                         Thread udpThread = new Thread(udpListener);
                         udpThread.start();
                         udpStarted = true;
@@ -196,10 +197,26 @@ public class ClientMain {
                               if (values.get("username") != null) {
                                  username = values.get("username").toString();
                               }
+                              if (udpStarted) {
+                                 udpListener.isLogged();
+                              }
                               break;
                            case "logout":
                               username = "";
                               System.exit(0);
+                        }
+                        break;
+                     default:
+                        switch (operation) {
+                           case "login":
+                              udpListener.shutdown();
+                              udpStarted = false;
+                              break;
+                           case "cancelOrder":
+                              if (username.isEmpty()) {
+                                 System.out.println("User not logged in");
+                                 continue;
+                              }
                         }
                   }
                } else if (response instanceof OrderResponse) {

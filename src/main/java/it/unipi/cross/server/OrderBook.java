@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
@@ -22,8 +23,10 @@ import it.unipi.cross.data.Type;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
 import it.unipi.cross.json.Notification;
+import it.unipi.cross.json.OrderResponse;
 import it.unipi.cross.json.Response;
 import it.unipi.cross.network.UdpNotifier;
+import it.unipi.cross.persistence.PersistenceManager;
 
 public class OrderBook {
 
@@ -33,6 +36,9 @@ public class OrderBook {
    // maps orderId to each Order
    private final Map<Integer, Order> orderMap = new ConcurrentHashMap<>();
 
+   // maps orderId to each Trade (completed order)
+   private final Map<Integer, Trade> tradeMap = new ConcurrentHashMap<>();
+
    // Limit orders book sides
    private final NavigableSet<LimitOrder> bidBook = new ConcurrentSkipListSet<>(
          Comparator.comparingInt(LimitOrder::getPrice).reversed().thenComparingLong(LimitOrder::getTimestamp));
@@ -40,24 +46,28 @@ public class OrderBook {
          Comparator.comparingInt(LimitOrder::getPrice).thenComparingLong(LimitOrder::getTimestamp));
 
    // To handle stop orders (used only in synchronized methods)
-   private final List<StopOrder> stopOrders = new ArrayList<>();
+   private final List<StopOrder> stopOrders = new LinkedList<>();
 
    // udp connection to notify order completion
    private final UdpNotifier udpNotifier;
 
+   // persistence manager price pre-calculation backup
+   private final PersistenceManager persistenceManager;
+
    private int bestBidPrice = -1;
    private int bestAskPrice = -1;
 
-   public OrderBook(List<Order> orders, UdpNotifier udpNotifier) {
+   public OrderBook(List<Order> orders, int lastOrderId, UdpNotifier udpNotifier, PersistenceManager persistenceManager) {
 
       this.udpNotifier = udpNotifier;
-      
+      this.persistenceManager = persistenceManager;
+
       if (orders != null && !orders.isEmpty()) {
          for (Order order : orders) {
             orderMap.put(order.getOrderId(), order);
          }
 
-         int lastId = Collections.max(orderMap.keySet());
+         int lastId = Math.max(Collections.max(orderMap.keySet()), lastOrderId);
          this.idGenerator.set(lastId + 1);
 
          for (Order order : orderMap.values()) {
@@ -67,6 +77,8 @@ public class OrderBook {
                bidBook.add((LimitOrder) order);
             }
          }
+
+         checkBestPrices();
       }
    }
 
@@ -103,7 +115,7 @@ public class OrderBook {
 
       if (orderMap.containsKey(orderId))
          return -1;
-      
+
       Type type = order.getType();
 
       switch (order.getOrderType()) {
@@ -125,7 +137,9 @@ public class OrderBook {
             orderMap.put(orderId, order);
             StopOrder stop = (StopOrder) order;
             stopOrders.add(stop);
-            MatchingAlgorithm.matchStopOrder(this, stop);
+            if (MatchingAlgorithm.matchStopOrder(this, stop)) {
+               checkStopOrders();
+            }
             break;
 
          case market:
@@ -133,6 +147,8 @@ public class OrderBook {
             return (success) ? orderId : -1;
       }
 
+      // System.out.println("after order " + orderId + ": bestask "+ getBestAskPrice()
+      // + ", bestbid " + getBestBidPrice());
       return orderId;
 
    }
@@ -156,7 +172,7 @@ public class OrderBook {
 
       if (order == null)
          return new MessageResponse(101, "order does not exist or has already been finalized");
-      if (!order.getUsername().equals(username))
+      if (order.getUsername() != null && !order.getUsername().equals(username))
          return new MessageResponse(101, "order belongs to a different user");
 
       orderMap.remove(orderId);
@@ -235,15 +251,13 @@ public class OrderBook {
    }
 
    /**
-    * Checks all stop orders in the order book and removes those that are
-    * triggered.
-    * <p>
-    * Iterates through the list of stop orders and, for each stop order, determines
-    * if it should be executed using the
-    * {@link MatchingAlgorithm#matchStopOrder(OrderBook, StopOrder)} method.
-    * If a stop order is triggered, it is removed from the list.
-    * </p>
-    */
+    * Checks all stop orders.
+    * For each, checks if triggered with
+    * {@link MatchingAlgorithm#matchStopOrder(OrderBook, StopOrder)}
+    *
+    * If a stop order is triggered, removes it from the order book, converts it to
+    * a market order, notifies the owner if it fails after conversion
+    **/
    public void checkStopOrders() {
 
       Iterator<StopOrder> it = stopOrders.iterator();
@@ -255,39 +269,73 @@ public class OrderBook {
             // convert to market order
             MarketOrder market = StopOrder.convertToMarket(stop);
             orderMap.remove(stop.getOrderId());
+            System.out.println("all good?");
             int fail = insertOrder(market);
             if (fail == -1) {
                // manage market insertion fail after conversion
-               System.err.println("[OrderBook] Failed insertion of market order after conversion from stop order. orderId: " + stop.getOrderId());
-            }               
+               new Thread(() -> {
+                  try {
+                     Thread.sleep(500);
+                     udpNotifier.notifyClient(stop.getUsername(),
+                           JsonUtil.toJson(new OrderResponse(stop.getOrderId())));
+                  } catch (IOException e) {
+                     System.err.println("[UdpNotifier] Error during notification");
+                  } catch (InterruptedException e) {
+                     // server was closed
+                  }
+               }).start();
+               
+            }
          }
       }
    }
 
-   public void notify(List<Trade> trades) {
-      if (trades.isEmpty()) {
+   public void insertTrade(Order firstOrder, Order secondOrder, int tradeSize, int tradePrice) {
+      Trade firstTrade = new Trade(firstOrder, tradeSize, tradePrice);
+      Trade secondTrade = new Trade(secondOrder, tradeSize, tradePrice);
+
+      tradeMap.put(firstTrade.getOrderId(), firstTrade);
+      tradeMap.put(secondTrade.getOrderId(), secondTrade);
+      notify(firstTrade);
+      notify(secondTrade);
+   }
+
+   /** Sends UDP notifications of order completion to the respective owners **/
+   public void notify(Trade trade) {
+      if (trade == null || trade.getOrderId() <= 0) {
          return;
       }
       try {
-         for (Trade t : trades) {
-            System.out.println(t);
-            Notification notification = new Notification(t);
-            String username = orderMap.get(t.getOrderId()).getUsername();
-            udpNotifier.notifyClient(username, JsonUtil.toJson(notification));
-         }
+         Notification notification = new Notification(trade);
+         udpNotifier.notifyClient(trade.getUsername(), JsonUtil.toJson(notification));
       } catch (IOException e) {
          System.err.println("[UdpNotifier] Error during notification");
       }
    }
-   /**
-    * Retrieves a list of all limit orders from the order book.
-    *
-    * @return a {@code List<Order>} containing only limit orders.
-    */
+
+   /** Retrieves a list of all limit orders from the order book **/
    public synchronized List<Order> getOrderList() {
       List<Order> orders = new ArrayList<>(orderMap.values());
       orders.removeIf(order -> order.getOrderType() != OrderType.limit);
       return orders;
+   }
+
+   /** Retrieves a copy of all trades from the order book **/
+   public List<Trade> getTradeList() {
+      List<Trade> trades = new ArrayList<>(tradeMap.values());
+      return trades;
+   }
+
+   /** Cuts a list of all trades from the order book **/
+   public synchronized List<Trade> extractTradeList() {
+      List<Trade> trades = new ArrayList<>(tradeMap.values());
+      tradeMap.clear();
+
+      return trades;
+   }
+
+   public void backupTrades() throws IOException{
+      persistenceManager.saveAll(null, null, extractTradeList());
    }
 
 }

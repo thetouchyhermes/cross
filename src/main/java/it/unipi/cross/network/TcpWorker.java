@@ -9,6 +9,8 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.time.Instant;
 
+import com.google.gson.JsonSyntaxException;
+
 import it.unipi.cross.data.LimitOrder;
 import it.unipi.cross.data.MarketOrder;
 import it.unipi.cross.data.StopOrder;
@@ -56,7 +58,15 @@ public class TcpWorker implements Runnable {
             if (line == null || line.isBlank()) {
                break;
             }
-            request = JsonUtil.fromJson(line, Request.class);
+
+            try {
+               request = JsonUtil.fromJson(line, Request.class);
+            } catch (JsonSyntaxException e) {
+               // not of format Request
+               request = null;
+               continue;
+            }
+
             Response response = processRequest(request);
             if (!running)
                break;
@@ -64,6 +74,10 @@ public class TcpWorker implements Runnable {
                out.write(JsonUtil.toJson(response));
                out.newLine();
                out.flush();
+            }
+
+            if (request.getOperation() == null) {
+               continue;
             }
             if (!username.isEmpty() && request.getOperation().equals("logout")) {
                running = false;
@@ -73,7 +87,7 @@ public class TcpWorker implements Runnable {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
          if (request != null && request.getOperation().equals("logout")) {
-            System.out.println("[Server] disconnected client " + socket.getPort());
+            // System.out.println("[Server] disconnected client " + socket.getPort());
          } else {
             // Server interrupted ^C
             // System.out.println("[Server] IOException on " + socket.getPort());
@@ -93,8 +107,8 @@ public class TcpWorker implements Runnable {
          try {
             if (socket != null && !socket.isClosed()) {
                socket.close();
-               System.out.println("[Server] disconnected client " + socket.getPort());
             }
+            System.out.println("[Server] disconnected client " + socket.getPort());
          } catch (IOException e) {
             System.err.println("[Server] error while closing socket of client " + socket.getPort());
          }
@@ -247,6 +261,7 @@ public class TcpWorker implements Runnable {
             }
             break;
          case "getPriceHistory":
+            orderBook.backupTrades();
             PriceHistoryCalculator history = new PriceHistoryCalculator();
             PriceHistory priceHistory = history.getPriceHistory(request.getAsString("month"));
             response = priceHistory;
@@ -264,12 +279,14 @@ public class TcpWorker implements Runnable {
             return response;
       }
 
-      if (!request.getOperation().equals("logout") || request.getAsString("stopped") == null) {
-         System.out.println("[Server] request from " + (!username.isEmpty() ? username : socket.getPort()) + ":");
-         System.out.println(request.toString());
+      if (request.getOperation() != null) {
+         if (!request.getOperation().equals("logout") || request.getAsString("stopped") == null) {
+            System.out.println("[Server] request from " + (!username.isEmpty() ? username : socket.getPort()) + ":");
+            System.out.println(request.toString());
 
-         System.out.println("[Server] response to " + (!username.isEmpty() ? username : socket.getPort()) + ":");
-         System.out.println(response.toString());
+            System.out.println("[Server] response to " + (!username.isEmpty() ? username : socket.getPort()) + ":");
+            System.out.println(response.toString());
+         }
       }
 
       return response;

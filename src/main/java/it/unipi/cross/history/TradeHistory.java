@@ -6,7 +6,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import it.unipi.cross.data.Trade;
-import it.unipi.cross.json.TradeTypeAdapter;
 
 public class TradeHistory {
    private List<Trade> trades;
@@ -26,7 +25,6 @@ public class TradeHistory {
    @Override
    public String toString() {
       Gson gson = new GsonBuilder()
-            .registerTypeAdapter(Trade.class, new TradeTypeAdapter())
             .setPrettyPrinting()
             .create();
       return gson.toJson(this);

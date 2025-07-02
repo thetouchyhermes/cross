@@ -9,6 +9,8 @@ import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
+import com.google.gson.JsonSyntaxException;
+
 import it.unipi.cross.client.Prompt;
 import it.unipi.cross.json.JsonUtil;
 import it.unipi.cross.json.MessageResponse;
@@ -99,21 +101,33 @@ public class TcpClient implements Closeable {
    private Response stringToResponse(String line) {
 
       // try to convert to a MessageResponse
-      MessageResponse messageResponse = JsonUtil.fromJson(line, MessageResponse.class);
-      if (messageResponse != null && messageResponse.getErrorMessage() != null) {
-         return messageResponse;
+      try {
+         MessageResponse messageResponse = JsonUtil.fromJson(line, MessageResponse.class);
+         if (messageResponse != null && messageResponse.getErrorMessage() != null) {
+            return messageResponse;
+         }
+      } catch (JsonSyntaxException e) {
+         // not of format MessageResponse
       }
 
       // fallback to OrderResponse
-      OrderResponse orderResponse = JsonUtil.fromJson(line, OrderResponse.class);
-      if (orderResponse != null && orderResponse.getOrderId() != 0) {
-         return orderResponse;
+      try {
+         OrderResponse orderResponse = JsonUtil.fromJson(line, OrderResponse.class);
+         if (orderResponse != null && orderResponse.getOrderId() != 0) {
+            return orderResponse;
+         }
+      } catch (JsonSyntaxException e) {
+         // not of format OrderResponse
       }
 
       // fallback to PriceHistory
-      PriceHistory priceHistory = JsonUtil.fromJson(line, PriceHistory.class);
-      if (priceHistory != null && priceHistory.getDailyStats() != null) {
-         return priceHistory;
+      try {
+         PriceHistory priceHistory = JsonUtil.fromJson(line, PriceHistory.class);
+         if (priceHistory != null && priceHistory.getDailyStats() != null) {
+            return priceHistory;
+         }
+      } catch (JsonSyntaxException e) {
+         // not of format OrderResponse
       }
 
       return null;
