@@ -41,12 +41,12 @@ To execute and run with maven:
 
 ### [JAVAC]
 To execute and run javac/java from maven project:
-1. mvn dependency:copy-dependencies
-2. $cp = 'target/classes;target/dependency/*'
-3. javac -d target/classes -cp $cp src/main/java/cross/*.java
-4a. java -cp $cp cross.ServerMain
+mvn dependency:copy-dependencies
+javac -d target/classes -cp target/dependency/* src/main/java/cross/*.java
+
+java -cp target/classes;target/dependency/* it.unipi.cross.server.ServerMain
 [different terminal]
-4b. java -cp $cp cross.ClientMain
+java --enable-native-access=ALL-UNNAMED -cp target/classes;target/dependency/* it.unipi.cross.client.ClientMain
 
 ### [JAR]
 To execute and run javac/java directly from .jar file:
