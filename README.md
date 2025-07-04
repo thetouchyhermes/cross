@@ -186,10 +186,8 @@ All configuration files are in `src/main/resources/`:
 
 ## License
 
-This project was created for educational purposes in the Network Lab course at di.unipi.
+This project is for educational purposes and does not currently use a specific open-source license.
 
 ---
 
-**For any questions, refer to the project report PDFs or contact the repository maintainer @thetouchyhermes**
-
----
+**Author:** [thetouchyhermes](https://github.com/thetouchyhermes)
