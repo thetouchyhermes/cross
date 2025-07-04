@@ -39,7 +39,6 @@ CROSS is an educational implementation of a centralized exchange order book serv
 - **Historical Price Data:**  
   - Query daily open, close, min, and max prices per specified month.
   - Useful for candlestick charting.
-  - To be still defined: Opening price could be linked to the last day of the previous month for continuity.
 
 - **Persistence:**  
   - Users, active limit orders, and trade history are stored in JSON files.
@@ -51,10 +50,8 @@ CROSS is an educational implementation of a centralized exchange order book serv
   Uses a cached thread pool for handling concurrent client connections.
 - **Concurrency:**  
   Thread-safe data structures: `ConcurrentHashMap`, `ConcurrentSkipListSet`, and atomic variables.
-  (To be still defined: Concurrency handling could be done better, some structures are unused or unnecessary.)
 - **Robust Network Handling:**  
   Graceful handling of server/client disconnects, timeouts, and shutdown.
-  (To be still defined: on Command Prompt execution, some unhandled exceptions are raised at Ctrl+C.)
 - **CLI Client:**  
   Command-line interface for all user operations.
 - **Configuration Files:**  
@@ -180,6 +177,10 @@ All configuration files are in `src/main/resources/`:
 - All server-client messages strictly follow the JSON format described in the project specification.
 - No interactive or command-line arguments for configuration; all settings are read from config files.
 - GUI is not implemented (yet); all interaction is via command-line interface.
+- To be modified:
+  - Opening price of daily stats in PriceHistory could be linked to the last day of the previous month for continuity.
+  - Concurrency handling could be done better, some structures are unused or unnecessary.
+  - On Command Prompt execution, some unhandled exceptions are raised at Ctrl+C.
 
 ---
 
