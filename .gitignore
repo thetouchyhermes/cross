@@ -1,2 +1,8 @@
+.vscode/
+mvnw
+mvnw.cmd
+.mvn/
+pom.xml
+README.txt
 target/
-src/main/resources/stored*.json
+src/main/resources/storedTrades.json
