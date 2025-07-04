@@ -1,21 +1,21 @@
 package it.unipi.cross.json;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;
-import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
+/**
+ * Utility used to serialize and deserialize Request values in JSON contexts, descerning string
+ * values from integer values
+ **/
 public class ConditionalMapTypeAdapter extends TypeAdapter<Map<String, Object>> {
-   
+
    private final Set<String> integerKeys;
 
    public ConditionalMapTypeAdapter(String[] integerKeys) {
@@ -88,45 +88,5 @@ public class ConditionalMapTypeAdapter extends TypeAdapter<Map<String, Object>> 
 
       in.endObject();
       return map;
-   }
-}
-
-// Usage example
-class Example {
-   public static void main(String[] args) {
-      // Define which keys should be serialized as integers
-      String[] integerKeys = { "age", "count", "id" };
-
-      // Create Gson instance with custom adapter
-      Gson gson = new GsonBuilder()
-            .registerTypeAdapter(
-                  new TypeToken<Map<String, Object>>() {
-                  }.getType(),
-                  new ConditionalMapTypeAdapter(integerKeys))
-            .setPrettyPrinting()
-            .create();
-
-      // Test data
-      Map<String, Object> data = new LinkedHashMap<>();
-      data.put("name", "John");
-      data.put("age", 25); // Integer value - will be serialized as integer
-      data.put("city", "New York");
-      data.put("count", "100"); // String value - will be parsed and serialized as integer
-      data.put("id", 12345); // Integer value - will be serialized as integer
-      data.put("description", "A test user");
-
-      // Serialize
-      String json = gson.toJson(data);
-      System.out.println("Serialized JSON:");
-      System.out.println(json);
-
-      // Deserialize
-      Type mapType = new TypeToken<Map<String, Object>>() {
-      }.getType();
-      Map<String, Object> deserializedData = gson.fromJson(json, mapType);
-
-      System.out.println("\nDeserialized Map:");
-      deserializedData
-            .forEach((k, v) -> System.out.println(k + " = " + v + " (type: " + v.getClass().getSimpleName() + ")"));
    }
 }

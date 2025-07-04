@@ -20,6 +20,7 @@ import it.unipi.cross.network.UdpNotifier;
 import it.unipi.cross.persistence.PersistenceManager;
 import it.unipi.cross.persistence.StreamingUtil;
 
+/** Main class for the server-side of CROSS **/
 public class ServerMain {
 
    public static void main(String[] args) {
@@ -36,8 +37,7 @@ public class ServerMain {
 
          int tcpPort = config.getInt("tcp.port");
          int tcpTimeout = config.getInt("tcp.timeout");
-         // int udpPort = config.getInt("udp.port");
-         // String udpAddress = config.getString("udp.address");
+
          String userFilePath = config.getString("persistence.user_file");
          String orderFilePath = config.getString("persistence.order_file");
          String tradeFilePath = config.getString("persistence.trade_file");
@@ -59,8 +59,8 @@ public class ServerMain {
          } catch (IOException e) {
             System.err.println("[Server] error while loading persistence files: " + e.getMessage());
          }
-         
-         // set up UDP notifier (creates its own socket)
+
+         // set up UDP notifier
          UdpNotifier udpNotifier = new UdpNotifier();
 
          Trade lastTrade;
@@ -73,11 +73,12 @@ public class ServerMain {
          OrderBook orderBook = new OrderBook(orders, lastId, udpNotifier, persistenceManager);
          UserBook userBook = new UserBook(users);
 
-         // schedule periodic persistence
+         // schedule periodic persistence of all data structures
          ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
          scheduler.scheduleAtFixedRate((() -> {
             try {
-               persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList(), orderBook.extractTradeList());
+               persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList(),
+                     orderBook.extractTradeList());
             } catch (IOException e) {
                System.err.println("[Server] error persisting data: " + e.getMessage());
             }
@@ -86,12 +87,15 @@ public class ServerMain {
          // set up TCP server
          TcpServer tcpServer = new TcpServer(orderBook, userBook, udpNotifier, tcpPort, tcpTimeout);
 
-         // System.out.println("[Server] started on TCP port " + tcpPort + ", UDP notifier on port " + udpNotifier.getLocalPort());
+         // Debug:
+         // System.out.println("[Server] started on TCP port " + tcpPort + ", UDP
+         // notifier on port " + udpNotifier.getLocalPort());
          System.out.println("[Server] started on TCP port " + tcpPort);
 
-         // Handler function for normal termination, exception and anomalous interruption
+         // handler function for client termination
+         // called by System.exit(), exceptions or anomalous events
          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            
+
             try {
                if (tcpServer != null)
                   tcpServer.stop();
@@ -99,8 +103,11 @@ public class ServerMain {
                   scheduler.shutdownNow();
                if (udpNotifier != null)
                   udpNotifier.close();
-               
-               persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList(), orderBook.extractTradeList());
+
+               // persist all data at termination
+               persistenceManager.saveAll(userBook.getUserList(), orderBook.getOrderList(),
+                     orderBook.extractTradeList());
+
             } catch (Exception e) {
                System.err.println("[ServerMain] error during shutdown: " + e.getMessage());
             }

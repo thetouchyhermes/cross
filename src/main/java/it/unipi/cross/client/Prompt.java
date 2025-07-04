@@ -1,14 +1,16 @@
 package it.unipi.cross.client;
 
+/**
+ * Utility class for printing prompts and help information on the client CLI
+ **/
 public class Prompt {
 
    // ANSI codes for colors
    public static final String RESET = "\033[0m";
    public static final String RED = "\033[0;31m";
    public static final String GREEN = "\033[0;32m";
-   public static final String YELLOW = "\033[0;33m";
-   public static final String BLUE = "\033[0;36m";
 
+   /** Prints program start message **/
    public static void printStart() {
       System.out.print(GREEN + "CROSS" + RESET
             + " 3.0.0:\n an ex"
@@ -20,12 +22,14 @@ public class Prompt {
       System.out.println("Use \"help()\" for list of commands\n");
    }
 
+   /** Prints program last message **/
    public static void printEnd() {
       System.out.print("\n\n------------------------------------\n"
             + "\nThank you for using " + GREEN + "CROSS" + RESET + "!\n  by " + GREEN + "Ernesto Cioli" + RESET
             + " @ Laboratorio di Reti | di.unipi\n\n");
    }
 
+   /** Prints complete help page **/
    public static void printHelp() {
       System.out.print("\nUsage: <command>(<args>)\n\n");
 
@@ -45,6 +49,7 @@ public class Prompt {
       System.out.print("For more information about a specific command, type \"help(<command>)\"\n\n");
    }
 
+   /** Prints command-specific help page **/
    public static void printHelp(String command) {
       System.out.print("\nUsage: \n\t");
       switch (command) {
@@ -103,10 +108,12 @@ public class Prompt {
       }
    }
 
+   /** Prints CLI line header in green (with username, if already logged) **/
    public static void newLine(String username) {
       System.out.print(GREEN + username + "@cross" + RESET + "> ");
    }
 
+   /** Prints to System.err but in red color */
    public static void printError(String message) {
       System.err.println(RED + message + RESET);
    }

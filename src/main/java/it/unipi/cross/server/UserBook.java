@@ -8,18 +8,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import it.unipi.cross.data.User;
 import it.unipi.cross.json.MessageResponse;
 
+/**
+ * Principal structure of user management of the app. Contains all user
+ * management methods, including registration, update credentials, login, logout
+ * and persistence starting data structures
+ **/
 public class UserBook {
 
    private final Map<String, User> userMap = new ConcurrentHashMap<>();
 
-   /**
-    * Constructs a UserBook by initializing the internal user map with the provided
-    * list of users.
-    * Each user is added to the map using their username as the key.
-    *
-    * @param users the list of User objects to be added to the UserBook; if null or
-    *              empty, no users are added
-    */
    public UserBook(List<User> users) {
       if (users != null && !users.isEmpty()) {
          for (User user : users) {
@@ -82,12 +79,6 @@ public class UserBook {
       return new MessageResponse(100, "OK");
    }
 
-   /**
-    * Returns a list of all users currently stored in the user map.
-    *
-    * @return a new {@link List} containing all {@link User} objects from the user
-    *         map
-    */
    public List<User> getUserList() {
       return new ArrayList<>(userMap.values());
    }

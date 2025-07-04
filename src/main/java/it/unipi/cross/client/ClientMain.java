@@ -17,28 +17,36 @@ import it.unipi.cross.json.Response;
 import it.unipi.cross.network.TcpClient;
 import it.unipi.cross.network.UdpListener;
 
+/** Main class for the client-side of CROSS **/
 public class ClientMain {
 
    private static TcpClient tcpClient;
    private static UdpListener udpListener;
    private static boolean udpStarted = false;
+
+   // to keep track of login state
    private static String username = "";
+
+   // to keep track of client status
    private static volatile boolean running = false;
 
    public static void main(String[] args) {
 
-      // Enable Jansi
+      // enable Jansi
       AnsiConsole.systemInstall();
 
-      // Start client app
+      // start client app
       Prompt.printStart();
 
-      // Handler function for normal termination, exception and anomalous interruption
+      // handler function for client termination
+      // called by System.exit(), exceptions or anomalous events
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 
          running = false;
 
          if (tcpClient != null && tcpClient.isAlive()) {
+
+            // signal to server client disconnection as a special logout message
             Request logout = new Request();
             logout.setOperation("logout");
             Map<String, Object> values = new LinkedHashMap<>();
@@ -48,6 +56,7 @@ public class ClientMain {
                tcpClient.sendRequest(logout);
             } catch (IOException e) {
                // server killed
+               // should not be reached
                Prompt.printError("[ClientMain] server didn't close this socket");
             }
 
@@ -58,13 +67,14 @@ public class ClientMain {
             udpListener.shutdown();
          }
 
+         // print ending message
          Prompt.printEnd();
 
-         // Disable Jansi
+         // disable Jansi
          AnsiConsole.systemUninstall();
       }));
 
-      // load configuration
+      // load configuration file
       ConfigReader config = new ConfigReader();
       try {
          config.loadClient();
@@ -73,14 +83,13 @@ public class ClientMain {
          System.exit(1);
       }
 
-      // String udpAddress = config.getString("udp.address");
+      // load parameters from config file
       int udpPort = config.getInt("udp.port");
       String tcpAddress = config.getString("tcp.address");
       int tcpPort = config.getInt("tcp.port");
 
-      // Create and start TCP connection
+      // create and start TCP connection
       tcpClient = new TcpClient(tcpAddress, tcpPort);
-
       try {
          tcpClient.connect();
       } catch (IOException e) {
@@ -93,21 +102,31 @@ public class ClientMain {
          running = true;
          while (running) {
 
+            tcpClient.keepServerAlive();
+
+            // print prompt line header
             Prompt.newLine(username);
-            String line = "";
-            line = scanner.nextLine();
-            if (!running)
+
+            String line = scanner.nextLine();
+
+            if (!running) {
+               // client disconnected
                break;
+            }
+
             if (line.isEmpty() || !line.contains("(") || !line.contains(")")) {
                System.out.println("Command format not valid");
                continue;
             }
+
+            // get command string without params
             String command = line.split("\\(")[0].trim();
 
             if (command == null || command.isEmpty()) {
                Prompt.printError("Command is empty");
                continue;
             }
+
             switch (command) {
                case "register":
                case "insertLimitOrder":
@@ -126,6 +145,7 @@ public class ClientMain {
                   continue;
             }
 
+            // delegate request creation
             Request request = RequestFactory.create(line);
 
             if (request != null) {
@@ -141,9 +161,11 @@ public class ClientMain {
                   case "help":
                      tcpClient.keepServerAlive();
                      if (values == null || values.size() == 0) {
+                        // print standard full help page
                         Prompt.printHelp();
                         continue;
                      }
+
                      String com = values.get("command").toString();
                      if (com != null)
                         command = com;
@@ -153,18 +175,20 @@ public class ClientMain {
                   case "notDefined":
                   case "invalidArgs":
                   case "help":
+                     // print help page for specific command
                      Prompt.printHelp(command);
                      continue;
+
                   case "login":
                      if (username.isEmpty() && !udpStarted) {
-                        // create and start UDP listener
-                        // udpListener = new UdpListener(udpAddress, udpPort, username);
-                        udpListener = new UdpListener(udpPort, request.getAsString("username"));
+                        // create and start UDP listener only at login request
+                        udpListener = new UdpListener(udpPort, request.getAsString("username"), tcpClient);
                         Thread udpThread = new Thread(udpListener);
                         udpThread.start();
                         udpStarted = true;
 
-                        // send udpPort
+                        // udp needed before response reception to be able to send correct port to
+                        // server
                         udpPort = udpListener.getPort();
                         values.put("udpPort", udpPort);
                      }
@@ -173,46 +197,51 @@ public class ClientMain {
 
                // Debug:
                // System.out.println(request.toString());
+
+               // send request to server
                tcpClient.sendRequest(request);
+               // receive response from server
                Response response = tcpClient.receiveResponse();
 
+               // client stopped if no response or 'exit' request
                if (response == null || operation.equals("exit"))
                   System.exit(0);
 
                if (response instanceof MessageResponse) {
+                  // tries parsing to MessageResponse
+
                   MessageResponse messageResponse = (MessageResponse) response;
 
                   int code = messageResponse.getResponse();
-                  String message = messageResponse.getErrorMessage();
                   switch (code) {
-                     case 0:
-                        Prompt.printError("[ClientMain] error on response received");
-                        System.exit(1);
-                     case 110:
-                        System.out.println(message);
-                        continue;
                      case 100:
                         switch (operation) {
                            case "login":
                               if (values.get("username") != null) {
+                                 // update username variable after successful login
                                  username = values.get("username").toString();
                               }
                               if (udpStarted) {
+                                 // signal to udp that login was successful
                                  udpListener.isLogged();
                               }
                               break;
                            case "logout":
+                              // update username variable after successful logout
                               username = "";
+                              // ends program
                               System.exit(0);
                         }
                         break;
                      default:
                         switch (operation) {
                            case "login":
+                              // signals to udp that login was not successful
                               udpListener.shutdown();
                               udpStarted = false;
                               break;
                            case "cancelOrder":
+                              // only logged users can cancel orders
                               if (username.isEmpty()) {
                                  System.out.println("User not logged in");
                                  continue;
@@ -220,32 +249,50 @@ public class ClientMain {
                         }
                   }
                } else if (response instanceof OrderResponse) {
+                  // tries parsing to OrderResponse
                   OrderResponse orderResponse = (OrderResponse) response;
 
                   int orderId = orderResponse.getOrderId();
                   switch (orderId) {
                      case 0:
+                        // should not be reached
                         Prompt.printError("[ClientMain] error on response received");
                         System.exit(1);
                      case -1:
+                        // ignore if not logged in
                         if (username.isEmpty()) {
                            System.out.println("User not logged in");
                            continue;
                         }
+
+                        // user logged in, failed order
                         System.out.println("Order failed or discarded:");
                         break;
                      default:
+                        // order was successful
                         System.out.println("Order placed correctly:");
+
+                        if (operation.equals("insertStopOrder")) {
+                           // increment counter of pending stop orders
+                           tcpClient.setPinCount();
+
+                        }
                   }
                } else if (response instanceof PriceHistory) {
+                  // tries parsing to PriceHistory
                   PriceHistory priceHistory = (PriceHistory) response;
+
                   if (priceHistory.getDailyStats() == null || priceHistory.getDailyStats().isEmpty()) {
+                     // no trades were made in the given month
                      System.out.println("No entries of this month are available");
                   } else {
+                     // prints table of stats
                      priceHistory.printDailyStats();
                   }
                   continue;
                }
+
+               // prints response received directly to CLI
                System.out.println(response.toString());
                System.out.flush();
             }
@@ -254,10 +301,12 @@ public class ClientMain {
          Prompt.printError(e.getClass() + ": " + e.getMessage());
          System.exit(1);
       } catch (NoSuchElementException e) {
+         // user probably interrupted on CLI using Ctrl+C
          Prompt.printError("^C");
-         System.exit(2);
+         System.exit(1);
       }
 
+      // print end message
       Prompt.printEnd();
    }
 

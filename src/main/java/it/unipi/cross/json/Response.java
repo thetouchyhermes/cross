@@ -3,6 +3,7 @@ package it.unipi.cross.json;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+/** Response basic class **/
 public abstract class Response {
 
    @Override

@@ -25,6 +25,7 @@ import it.unipi.cross.json.Response;
 import it.unipi.cross.server.OrderBook;
 import it.unipi.cross.server.UserBook;
 
+/** worker thread for the server TCP handling of a client socket **/
 public class TcpWorker implements Runnable {
    private Socket socket;
    private OrderBook orderBook;
@@ -53,7 +54,10 @@ public class TcpWorker implements Runnable {
       try (
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+
+         // start Request listening
          while (running && !Thread.currentThread().isInterrupted()) {
+
             line = in.readLine();
             if (line == null || line.isBlank()) {
                break;
@@ -70,6 +74,8 @@ public class TcpWorker implements Runnable {
             Response response = processRequest(request);
             if (!running)
                break;
+
+            // write Response to client through output buffer
             if (response != null) {
                out.write(JsonUtil.toJson(response));
                out.newLine();
@@ -79,6 +85,8 @@ public class TcpWorker implements Runnable {
             if (request.getOperation() == null) {
                continue;
             }
+
+            // stop worker if client logged out
             if (!username.isEmpty() && request.getOperation().equals("logout")) {
                running = false;
             }
@@ -87,17 +95,20 @@ public class TcpWorker implements Runnable {
          System.err.println("[Server] timed out client " + socket.getPort());
       } catch (IOException e) {
          if (request != null && request.getOperation().equals("logout")) {
+            // Debug:
             // System.out.println("[Server] disconnected client " + socket.getPort());
          } else {
-            // Server interrupted ^C
-            // System.out.println("[Server] IOException on " + socket.getPort());
+            // Debug: (on server Ctrl+C)
+            // System.out.println("[Server] Server closed, client disconnected);
          }
       } catch (Exception e) {
+
          System.err.println("[Server] " + e.getClass() + ": " + e.getMessage());
-         // e.printStackTrace();
       } finally {
+
          if (!username.isEmpty()) {
             userBook.logout(username);
+
             // Remove client from UDP notifier
             if (udpNotifier != null) {
                udpNotifier.removeClient(username);
@@ -116,6 +127,7 @@ public class TcpWorker implements Runnable {
 
    }
 
+   /** handle received request and create response object **/
    private Response processRequest(Request request) throws IOException, NullPointerException {
       if (request == null)
          return null;
@@ -140,6 +152,7 @@ public class TcpWorker implements Runnable {
                   request.getAsString("username"),
                   request.getAsString("password"));
             break;
+
          case "updateCredentials":
             if (!username.isEmpty()) {
                response = new MessageResponse(104, "user currently logged in");
@@ -150,6 +163,7 @@ public class TcpWorker implements Runnable {
                   request.getAsString("old_password"),
                   request.getAsString("new_password"));
             break;
+
          case "login":
             if (!username.isEmpty()) {
                response = new MessageResponse(102, "user already logged in");
@@ -161,36 +175,43 @@ public class TcpWorker implements Runnable {
 
             if (messageResponse.getResponse() == 100) {
                username = request.getAsString("username");
+
+               // At successful login
                // Automatically register client for UDP notifications if udpPort is provided
                try {
                   Integer udpPort = request.getAsInteger("udpPort");
+
                   if (udpPort != null && udpNotifier != null) {
                      udpNotifier.addClient(username, udpPort);
                   } else {
                      System.out.println("[Server] No port found at login");
                   }
                } catch (Exception e) {
-                  System.err.println("[Server] Warning: Could not register UDP for " + username +
-                        ": " + e.getMessage());
-                  // Don't fail login if UDP registration fails
+                  // if UDP fails, login is still valid
+                  System.err
+                        .println("[Server] Warning: Could not register UDP for " + username + ": " + e.getMessage());
                }
             }
 
             response = messageResponse;
             break;
+
          case "logout":
             if (username.isEmpty()) {
                response = new MessageResponse(101, "user not logged in");
                break;
             }
             response = userBook.logout(username);
+
             // Remove client from UDP notifier
             if (udpNotifier != null) {
                udpNotifier.removeClient(username);
             }
+
             username = "";
             running = false;
             break;
+
          case "insertLimitOrder":
             if (username.isEmpty()) {
                response = new OrderResponse(-1);
@@ -209,6 +230,7 @@ public class TcpWorker implements Runnable {
                response = new OrderResponse(-1);
             }
             break;
+
          case "insertMarketOrder":
             if (username.isEmpty()) {
                response = new OrderResponse(-1);
@@ -227,6 +249,7 @@ public class TcpWorker implements Runnable {
                response = new OrderResponse(-1);
             }
             break;
+
          case "insertStopOrder":
             if (username.isEmpty()) {
                response = new OrderResponse(-1);
@@ -247,6 +270,7 @@ public class TcpWorker implements Runnable {
                response = new OrderResponse(-1);
             }
             break;
+
          case "cancelOrder":
             if (username.isEmpty()) {
                response = new MessageResponse(101, "user not logged in");
@@ -260,26 +284,31 @@ public class TcpWorker implements Runnable {
                response = new OrderResponse(-1);
             }
             break;
+
          case "getPriceHistory":
             orderBook.backupTrades();
             PriceHistoryCalculator history = new PriceHistoryCalculator();
             PriceHistory priceHistory = history.getPriceHistory(request.getAsString("month"));
             response = priceHistory;
             break;
+
          case "exit":
             if (!username.isEmpty()) {
                userBook.logout(username);
+
                // Remove client from UDP notifier
                if (udpNotifier != null) {
                   udpNotifier.removeClient(username);
                }
             }
-            response = new MessageResponse(0, operation);
+            response = null;
             running = false;
             return response;
       }
 
       if (request.getOperation() != null) {
+
+         // print if not interrupted client (special logout)
          if (!request.getOperation().equals("logout") || request.getAsString("stopped") == null) {
             System.out.println("[Server] request from " + (!username.isEmpty() ? username : socket.getPort()) + ":");
             System.out.println(request.toString());

@@ -28,6 +28,11 @@ import it.unipi.cross.json.Response;
 import it.unipi.cross.network.UdpNotifier;
 import it.unipi.cross.persistence.PersistenceManager;
 
+/**
+ * Principal structure of order handling of the app. Contains all order
+ * management methods, including insertion, deletion, matching, stop orders
+ * triggering and persistence starting data structures
+ **/
 public class OrderBook {
 
    // unique order IDs
@@ -57,7 +62,8 @@ public class OrderBook {
    private int bestBidPrice = -1;
    private int bestAskPrice = -1;
 
-   public OrderBook(List<Order> orders, int lastOrderId, UdpNotifier udpNotifier, PersistenceManager persistenceManager) {
+   public OrderBook(List<Order> orders, int lastOrderId, UdpNotifier udpNotifier,
+         PersistenceManager persistenceManager) {
 
       this.udpNotifier = udpNotifier;
       this.persistenceManager = persistenceManager;
@@ -66,9 +72,6 @@ public class OrderBook {
          for (Order order : orders) {
             orderMap.put(order.getOrderId(), order);
          }
-
-         int lastId = Math.max(Collections.max(orderMap.keySet()), lastOrderId);
-         this.idGenerator.set(lastId + 1);
 
          for (Order order : orderMap.values()) {
             if (order.getType() == Type.ask) {
@@ -80,28 +83,16 @@ public class OrderBook {
 
          checkBestPrices();
       }
+
+      int lastId = lastOrderId;
+      if (!orderMap.isEmpty()) {
+         lastId = Math.max(Collections.max(orderMap.keySet()), lastOrderId);
+      }
+
+      this.idGenerator.set(lastId + 1);
+
    }
 
-   /**
-    * Inserts an order into the order book.
-    * <p>
-    * This method handles the insertion of different types of orders (limit, stop,
-    * market)
-    * into the order book. It assigns a unique order ID if necessary, checks for
-    * duplicate
-    * orders, and updates the relevant order book structures. For limit and stop
-    * orders,
-    * it attempts to match them using the matching algorithm. For market orders, it
-    * tries
-    * to execute the order immediately.
-    * </p>
-    *
-    * @param order the {@link Order} to be inserted
-    * @return the assigned order ID if the order is successfully inserted and
-    *         processed;
-    *         -1 if the order is invalid, already exists, or could not be matched
-    *         (for market orders)
-    */
    public synchronized int insertOrder(Order order) {
 
       if (order.getOriginalSize() <= 0)
@@ -147,26 +138,10 @@ public class OrderBook {
             return (success) ? orderId : -1;
       }
 
-      // System.out.println("after order " + orderId + ": bestask "+ getBestAskPrice()
-      // + ", bestbid " + getBestBidPrice());
       return orderId;
 
    }
 
-   /**
-    * Deletes an order from the order book by its unique order ID.
-    * <p>
-    * This method removes the order from the internal order map and, depending on
-    * the order type,
-    * also removes it from the corresponding order book (bidBook, askBook, or
-    * stopOrders).
-    * If the order does not exist, the method returns {@code false}.
-    * </p>
-    *
-    * @param orderId the unique identifier of the order to be deleted
-    * @return {@code true} if the order was found and deleted; {@code false}
-    *         otherwise
-    */
    public synchronized Response cancelOrder(int orderId, String username) {
       Order order = orderMap.get(orderId);
 
@@ -194,7 +169,7 @@ public class OrderBook {
       return new MessageResponse(100, "OK");
    }
 
-   // matching algorithm access
+   // matchingAlgorithm access
 
    public NavigableSet<LimitOrder> getBidBook() {
       return bidBook;
@@ -217,17 +192,9 @@ public class OrderBook {
    }
 
    /**
-    * Checks if the best bid or ask prices in the order book have changed.
-    * <p>
-    * Compares the current best bid and ask prices with the previously stored
-    * values.
-    * If either price has changed, updates the stored values, triggers a check for
-    * stop orders,
-    * and returns {@code true}. Otherwise, returns {@code false}.
-    *
-    * @return {@code true} if the best bid or ask price has changed; {@code false}
-    *         otherwise.
-    */
+    * Checks if the best prices in the order book have changed. Then tries to
+    * trigger stop orders list
+    **/
    public boolean checkBestPrices() {
 
       int newBestBid = bidBook.isEmpty() ? -1 : bidBook.first().getPrice();
@@ -242,7 +209,6 @@ public class OrderBook {
          bestAskPrice = newBestAsk;
          changed = true;
       }
-
       if (changed) {
          checkStopOrders();
       }
@@ -273,23 +239,13 @@ public class OrderBook {
             int fail = insertOrder(market);
             if (fail == -1) {
                // manage market insertion fail after conversion
-               new Thread(() -> {
-                  try {
-                     Thread.sleep(500);
-                     udpNotifier.notifyClient(stop.getUsername(),
-                           JsonUtil.toJson(new OrderResponse(stop.getOrderId())));
-                  } catch (IOException e) {
-                     System.err.println("[UdpNotifier] Error during notification");
-                  } catch (InterruptedException e) {
-                     // server was closed
-                  }
-               }).start();
-               
+               udpNotifier.notifyClient(stop.getUsername(), JsonUtil.toJson(new OrderResponse(stop.getOrderId())));
             }
          }
       }
    }
 
+   // add completed order to book and notify it to orders owners
    public void insertTrade(Order firstOrder, Order secondOrder, int tradeSize, int tradePrice) {
       Trade firstTrade = new Trade(firstOrder, tradeSize, tradePrice);
       Trade secondTrade = new Trade(secondOrder, tradeSize, tradePrice);
@@ -305,12 +261,8 @@ public class OrderBook {
       if (trade == null || trade.getOrderId() <= 0) {
          return;
       }
-      try {
-         Notification notification = new Notification(trade);
-         udpNotifier.notifyClient(trade.getUsername(), JsonUtil.toJson(notification));
-      } catch (IOException e) {
-         System.err.println("[UdpNotifier] Error during notification");
-      }
+      Notification notification = new Notification(trade);
+      udpNotifier.notifyClient(trade.getUsername(), JsonUtil.toJson(notification));
    }
 
    /** Retrieves a list of all limit orders from the order book **/
@@ -334,7 +286,8 @@ public class OrderBook {
       return trades;
    }
 
-   public void backupTrades() throws IOException{
+   // extracts immediately all saved trades in the order book to their file
+   public void backupTrades() throws IOException {
       persistenceManager.saveAll(null, null, extractTradeList());
    }
 

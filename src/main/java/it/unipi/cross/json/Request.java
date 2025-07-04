@@ -7,25 +7,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 /**
- * Represents a request containing an operation and associated values.
- * <p>
- * This class encapsulates the details of a request, including the operation to
- * be performed
- * and a map of key-value pairs representing additional parameters or data
- * required for the operation.
- * </p>
- *
- * <p>
- * Typical usage:
- * </p>
- * 
- * <pre>
- * Request request = new Request();
- * request.setOperation("createUser");
- * Map&lt;String, Object&gt; params = new LinkedHashMap&lt;&gt;();
- * params.put("username", "john");
- * request.setValues(params);
- * </pre>
+ * Represents a request containing an operation and associated values (as a map)
  */
 public class Request {
 
@@ -51,11 +33,13 @@ public class Request {
       this.values = values;
    }
 
+   /** Returns the indicated string from the values map if present, or null **/
    public String getAsString(String key) {
       Object value = values.get(key);
       return (value != null) ? String.valueOf(value) : null;
    }
 
+   /** Returns the indicated integer from the values map if present, or null **/
    public Integer getAsInteger(String key) {
       Object value = values.get(key);
       if (value == null)
@@ -73,7 +57,6 @@ public class Request {
       return null;
    }
 
-   // for testing
    @Override
    public String toString() {
       String[] integerKeys = { "size", "price", "orderId" };
